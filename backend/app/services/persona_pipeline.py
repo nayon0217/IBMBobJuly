@@ -3,14 +3,21 @@
 The hard problem here isn't finding names — it's *identity resolution*
 ("Elizabeth" / "Lizzy" / "Miss Bennet" are one person) — and keeping
 *discovery* (breadth over the whole book) separate from *grounding* (depth on
-one person). So this runs as four stages:
+one person). So this runs as four stages, split across two moments:
 
-  Stage 1  Discovery      map over chunk batches -> messy candidate list
-  Stage 2  Consolidation  reduce to a canonical roster + stable ids (alias merge)
-  Stage 3  Appearance     deterministic string scan -> frequency, first/key chunks,
-                          minor-character cutoff (importance + frequency, never hardcoded)
-  Stage 4  Grounding      per character: retrieve real passages from the vector
-                          store and write a persona card grounded in them
+  At upload (`build_roster`):
+    Stage 1  Discovery      map over chunk batches -> messy candidate list
+    Stage 2  Consolidation  reduce to a canonical roster + stable ids (alias merge)
+    Stage 3  Appearance     deterministic string scan -> frequency, first/key chunks,
+                            minor-character cutoff (importance + frequency, never hardcoded)
+
+  On demand, when a chat/scene is entered (`ground_character`):
+    Stage 4  Grounding      per character: retrieve real passages from the vector
+                            store and write a persona card grounded in them
+
+Deferring Stage 4 means upload only pays for discovery over the whole book, and
+grounding cost is paid one character at a time, only for the characters the
+writer actually opens. The grounding work itself is unchanged — only its timing.
 
 `generate` and `embed` are injected (watsonx in production, fakes in tests) so
 this module never imports the IBM client directly. `progress` is an optional
@@ -26,7 +33,6 @@ the LLM discovery/consolidation passes.
 import logging
 import re
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from app.schemas import PersonaCard
@@ -49,12 +55,6 @@ _DISCOVERY_BATCH_CHARS = 48_000
 _KEY_CHUNKS_PER_CHARACTER = 4
 _RETRIEVAL_TOP_K = 6
 _GROUNDING_CHAR_BUDGET = 8_000
-# Only ground the top-N most prominent characters (frequency-ranked). Grounding
-# is one LLM call each, so this caps cost/latency; the rest still appear in the
-# roster returned to the caller but without full persona cards.
-_MAX_GROUNDED_CHARACTERS = 3
-# Grounding calls are independent network I/O, so run them concurrently.
-_GROUNDING_MAX_WORKERS = 8
 # Minor-character cutoff (combined with the model's importance judgment).
 _MINOR_MIN_MENTIONS = 2
 _FALLBACK_ROSTER_SIZE = 8
@@ -86,7 +86,7 @@ CANDIDATE MENTIONS:
 {candidates}"""
 
 PERSONA_PROMPT = """You are writing a character persona card grounded ONLY in the passages provided below. Do not use outside knowledge; do not invent facts. If the passages do not support a field, use "unknown" (for voice/physical) or an empty list (for traits/motivations).
-
+{boundary}
 CHARACTER: {name}
 ALSO KNOWN AS: {aliases}
 
@@ -99,37 +99,118 @@ Return ONLY valid JSON, no other text:
 PASSAGES:
 {passages}"""
 
+# Injected into the persona prompt when a timeline boundary is set, so the card
+# captures who the character IS at that point — not who they become later.
+_BOUNDARY_INSTRUCTION = (
+    "\nIMPORTANT — TIMELINE: This card must reflect the character ONLY as far as "
+    "they have developed up to this point in the story. The passages below are "
+    "everything they have experienced so far; base every field solely on them. Do "
+    "NOT use any knowledge of later events, revelations, growth, or how their "
+    "arc ends.\n"
+)
+
 
 # --- public entry point -------------------------------------------------------
 
 
-def extract_characters(
+def build_roster(
     chunks: list[str],
-    vector_store: VectorStore,
     *,
     generate: Generate,
-    embed: Embed,
     progress: Optional[Progress] = None,
-) -> list[PersonaCard]:
+) -> list[dict]:
+    """Stages 1–3 only: discover characters, merge aliases into a canonical
+    roster, then a deterministic appearance scan to drop minor characters and
+    rank the survivors by prominence.
+
+    Returns the survivor roster entries (dicts with id/canonical_name/aliases/
+    frequency/first_appearance_chunk/key_chunk_ids). Stage 4 — grounding each
+    into a full PersonaCard — is deferred to `ground_character`, run lazily when
+    the writer enters a chat or scene. No grounding/LLM persona calls happen
+    here, so the whole cast is returned rather than a top-N cap."""
     emit = _progress_emitter(progress)
 
     candidates = _discover(chunks, generate, emit)
     roster = _consolidate(candidates, generate, emit)
     survivors = _appearance_scan(roster, chunks, emit)
 
-    # Cap grounding to the most prominent characters (survivors are already
-    # frequency-ranked, most-mentioned first).
-    grounded = survivors[:_MAX_GROUNDED_CHARACTERS]
-    if len(survivors) > len(grounded):
-        emit(
-            f"Grounding the top {len(grounded)} of {len(survivors)} characters "
-            "(cap) to keep extraction fast."
+    emit(f"Found {len(survivors)} characters (persona cards built on demand).")
+    return survivors
+
+
+# --- Stage 4: grounded persona cards (deferred, one character at a time) ------
+
+
+def ground_character(
+    entry: dict,
+    roster: list[dict],
+    chunks: list[str],
+    vector_store: VectorStore,
+    *,
+    generate: Generate,
+    embed: Embed,
+    knowledge_up_to_chunk: Optional[int] = None,
+    progress: Optional[Progress] = None,
+) -> PersonaCard:
+    """Stage 4 for a single character: retrieve real passages and write a
+    persona card grounded in them. `roster` is the full survivor roster so
+    relationship keys resolve to valid ids.
+
+    `knowledge_up_to_chunk` bounds the retrieval (and instructs the model) to
+    only what the character has experienced up to that point in the story, so
+    the persona reflects who they are *then* — spoiler-safe, matching /chat and
+    /scene. None = the whole manuscript. Otherwise identical to the old batch
+    grounding; only the timing (and now the timeline window) changes."""
+    emit = _progress_emitter(progress)
+    alias_to_id = _alias_to_id_map(roster)
+    id_to_name = {e["id"]: e["canonical_name"] for e in roster}
+    roster_lines = "\n".join(f"- {e['id']}: {e['canonical_name']}" for e in roster)
+
+    name = entry["canonical_name"]
+    emit(f"Grounding persona card: {name}…")
+
+    passages = _grounding_passages(
+        entry, chunks, vector_store, embed, up_to_chunk=knowledge_up_to_chunk
+    )
+    boundary = _BOUNDARY_INSTRUCTION if knowledge_up_to_chunk is not None else ""
+    try:
+        data = generate_json(
+            generate,
+            PERSONA_PROMPT.format(
+                boundary=boundary,
+                name=name,
+                aliases=", ".join(entry["aliases"]),
+                roster=roster_lines,
+                passages=passages,
+            ),
+            max_tokens=1500,
         )
+    except ValueError as exc:
+        logger.warning("Persona generation failed for %s: %s", name, exc)
+        data = {}
 
-    cards = _build_cards(grounded, chunks, vector_store, generate, embed, emit)
+    # Gender rides the same grounding call; if the model didn't settle it, fall
+    # back to the deterministic honorific/pronoun scan over the same timeline
+    # window (no extra call).
+    gender = normalize_gender(data.get("gender")) or infer_gender(
+        entry["aliases"], _chunks_up_to(chunks, knowledge_up_to_chunk)
+    )
 
-    emit(f"Done — {len(cards)} character cards built.")
-    return cards
+    return PersonaCard(
+        id=entry["id"],
+        name=name,
+        traits=data.get("traits") or [],
+        motivations=data.get("motivations") or [],
+        voice=data.get("voice") or "",
+        physical=_clean_physical(data.get("physical")),
+        gender=gender,
+        relationships=_normalize_relationships(
+            data.get("relationships"), alias_to_id, id_to_name, entry["id"]
+        ),
+        key_scene_ids=entry["key_chunk_ids"],
+        first_appearance_chunk=entry["first_appearance_chunk"],
+        grounded=True,
+    )
 
 
 # --- Stage 1: discovery -------------------------------------------------------
@@ -251,96 +332,40 @@ def _keep(entry: dict) -> bool:
     return False  # background
 
 
-# --- Stage 4: grounded persona cards ------------------------------------------
-
-
-def _build_cards(
-    roster: list[dict],
-    chunks: list[str],
-    vector_store: VectorStore,
-    generate: Generate,
-    embed: Embed,
-    emit: Progress,
-) -> list[PersonaCard]:
-    alias_to_id = _alias_to_id_map(roster)
-    id_to_name = {e["id"]: e["canonical_name"] for e in roster}
-    roster_lines = "\n".join(f"- {e['id']}: {e['canonical_name']}" for e in roster)
-    total = len(roster)
-
-    def build_one(indexed: tuple[int, dict]) -> PersonaCard:
-        i, entry = indexed
-        name = entry["canonical_name"]
-        emit(f"Stage 4/4 · grounding persona {i} of {total}: {name}…")
-
-        passages = _grounding_passages(entry, chunks, vector_store, embed)
-        try:
-            data = generate_json(
-                generate,
-                PERSONA_PROMPT.format(
-                    name=name,
-                    aliases=", ".join(entry["aliases"]),
-                    roster=roster_lines,
-                    passages=passages,
-                ),
-                max_tokens=1500,
-            )
-        except ValueError as exc:
-            logger.warning("Persona generation failed for %s: %s", name, exc)
-            data = {}
-
-        # Gender rides the same grounding call; if the model didn't settle it,
-        # fall back to the deterministic honorific/pronoun scan (no extra call).
-        gender = normalize_gender(data.get("gender")) or infer_gender(
-            entry["aliases"], chunks
-        )
-
-        return PersonaCard(
-            id=entry["id"],
-            name=name,
-            traits=data.get("traits") or [],
-            motivations=data.get("motivations") or [],
-            voice=data.get("voice") or "",
-            physical=_clean_physical(data.get("physical")),
-            gender=gender,
-            relationships=_normalize_relationships(
-                data.get("relationships"), alias_to_id, id_to_name, entry["id"]
-            ),
-            key_scene_ids=entry["key_chunk_ids"],
-            first_appearance_chunk=entry["first_appearance_chunk"],
-        )
-
-    if not roster:
-        return []
-
-    # Grounding calls are independent, so fan them out; keep the returned cards
-    # in the input (frequency) order regardless of completion order.
-    workers = min(_GROUNDING_MAX_WORKERS, total)
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        return list(pool.map(build_one, enumerate(roster, start=1)))
-
-
 def _grounding_passages(
     entry: dict,
     chunks: list[str],
     vector_store: VectorStore,
     embed: Embed,
+    up_to_chunk: Optional[int] = None,
 ) -> str:
     """Gather real passages for this character: the deterministic key chunks
     (exact) unioned with a semantic vector query against the store (recall).
-    This is the "retrieve on the vector database" step."""
+    This is the "retrieve on the vector database" step.
+
+    When `up_to_chunk` is set, both sources are capped to chunks at or before
+    that index, so a spoiler-safe persona only ever sees what the character has
+    lived through so far."""
     collected: dict[str, str] = {}
 
-    # Exact: the chunks that mention this character most (Stage 3).
+    # Exact: the chunks that mention this character most (Stage 3), dropping any
+    # past the timeline boundary.
     for chunk_id in entry["key_chunk_ids"]:
         idx = _chunk_index(chunk_id)
-        if idx is not None and 0 <= idx < len(chunks):
-            collected[chunk_id] = chunks[idx]
+        if idx is None or not 0 <= idx < len(chunks):
+            continue
+        if up_to_chunk is not None and idx > up_to_chunk:
+            continue
+        collected[chunk_id] = chunks[idx]
 
-    # Semantic: query the vector store for the character's name + descriptor.
+    # Semantic: query the vector store for the character's name + descriptor
+    # (the store applies the same timeline filter).
     query = " ".join([entry["canonical_name"], *entry["aliases"]])
     try:
         query_vec = embed([query])[0]
-        for chunk_id, text in vector_store.search(query_vec, top_k=_RETRIEVAL_TOP_K):
+        for chunk_id, text in vector_store.search(
+            query_vec, top_k=_RETRIEVAL_TOP_K, up_to_chunk=up_to_chunk
+        ):
             collected.setdefault(chunk_id, text)
     except Exception as exc:  # retrieval is best-effort; key chunks still ground
         logger.warning("Vector retrieval failed for %s: %s", entry["canonical_name"], exc)
@@ -357,6 +382,13 @@ def _grounding_passages(
 
 
 # --- helpers ------------------------------------------------------------------
+
+
+def _chunks_up_to(chunks: list[str], up_to_chunk: Optional[int]) -> list[str]:
+    """Chunks at or before the timeline boundary (all of them when None)."""
+    if up_to_chunk is None:
+        return chunks
+    return chunks[: up_to_chunk + 1]
 
 
 def _batch_chunks(chunks: list[str], max_chars: int) -> list[str]:

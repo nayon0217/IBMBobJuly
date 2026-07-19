@@ -13,7 +13,12 @@ Returns `{ "status": "ok", "backend": "mock" | "watsonx" }`.
 Use it to confirm which backend the frontend is talking to.
 
 ## `POST /extract`
-Manuscript in, characters out.
+Manuscript in, cast out. This does the *ingestion* half of the pipeline only:
+embed + index the chunks, discover characters, merge aliases into a canonical
+roster, and summarize the timeline. It returns **un-grounded stubs** for the
+whole cast — `id`, `name`, and timeline anchors (`key_scene_ids`,
+`first_appearance_chunk`), with `grounded: false`. The expensive per-character
+persona grounding is deferred to `POST /personas`.
 
 Request:
 ```json
@@ -22,10 +27,41 @@ Request:
 Response:
 ```json
 {
-  "characters": [ PersonaCard, ... ],
-  "chunk_count": 12
+  "characters": [ PersonaCard (stub), ... ],
+  "chunk_count": 12,
+  "timeline": [
+    { "chunk_start": 0, "chunk_end": 1, "summary": "one-line recap of the span" },
+    ...
+  ]
 }
 ```
+`timeline` is a per-span (a chunk or two each) recap of the manuscript in chunk
+order, produced during ingestion. It backs the timeline slider / `what happens`
+readout and the spoiler-safe `knowledge_up_to_chunk` control.
+
+## `POST /personas`
+Ground one or more characters into full persona cards. Called when the writer
+enters a chat or scene (after `/extract` returned stubs). Runs Stage 4 —
+retrieve real passages, write the card — for any requested id that isn't grounded
+yet, caches the result (so re-entry is instant), and returns fully-populated
+`PersonaCard`s (`grounded: true`) aligned index-for-index with the request.
+
+Request:
+```json
+{
+  "character_ids": ["elizabeth-bennet", "fitzwilliam-darcy"],
+  "knowledge_up_to_chunk": 8
+}
+```
+Response:
+```json
+{ "characters": [ PersonaCard, ... ] }
+```
+`knowledge_up_to_chunk` is optional (the timeline point the writer picked). When
+set, each persona is grounded from ONLY the passages up to that chunk and told
+not to use later events, so the card reflects who the character is *at that
+point* in the story. It's part of the cache key, so the same character at two
+different points is grounded and cached separately. Unknown ids yield `404`.
 
 ## `POST /chat`
 Talk to one character, in voice, grounded in the manuscript.
@@ -66,10 +102,14 @@ Request:
 {
   "character_ids": ["elizabeth-bennet", "fitzwilliam-darcy"],
   "situation": "They are trapped by rain in a parlour.",
-  "max_turns": 6
+  "max_turns": 6,
+  "knowledge_up_to_chunk": 8
 }
 ```
 `character_ids` needs at least one id; `max_turns` is 1–20 (default 6).
+`knowledge_up_to_chunk` is optional and mirrors `/chat`: it bounds both the
+persona grounding and the scene retrieval, so the characters only know events up
+to that point (spoiler-safe).
 
 Response:
 ```json
@@ -103,9 +143,17 @@ their most recent line.
   "physical": "Tall, 17 years old, blonde hair",
   "gender": "female",
   "relationships": { "fitzwilliam-darcy": "wary attraction" },
-  "key_scene_ids": ["chunk-3", "chunk-11"]
+  "key_scene_ids": ["chunk-3", "chunk-11"],
+  "first_appearance_chunk": 3,
+  "grounded": true
 }
 ```
+`grounded` says whether the persona has been filled in (Stage 4). `POST /extract`
+returns stubs with `grounded: false` and only `id`, `name`, `key_scene_ids`, and
+`first_appearance_chunk` set; the descriptive fields (`traits`, `motivations`,
+`voice`, `physical`, `gender`, `relationships`) are populated when the card is
+grounded by `POST /personas` (`grounded: true`).
+
 `gender` is `"male"`, `"female"`, `"nonbinary"`, or `""` when the text never
 settles it. It costs no extra API calls: the extraction pipeline asks for it
 inside the existing persona grounding call and otherwise infers it

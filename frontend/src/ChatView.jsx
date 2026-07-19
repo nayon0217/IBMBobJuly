@@ -7,7 +7,13 @@ import { colorFor } from "./avatar";
 import { buildAvatarUrl } from "./characterAvatar";
 import { T } from "./theme";
 
-export default function ChatView({ character, characters = [], title, onBack }) {
+export default function ChatView({
+  character,
+  characters = [],
+  title,
+  knowledgeUpToChunk = null,
+  onBack,
+}) {
   const [messages, setMessages] = useState([]); // [{ speaker_id, text }]
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,7 +59,7 @@ export default function ChatView({ character, characters = [], title, onBack }) 
     setError("");
     setLoading(true);
     try {
-      const res = await chat(character.id, message, history);
+      const res = await chat(character.id, message, history, knowledgeUpToChunk);
       setMessages((m) => [...m, res.reply]);
     } catch (err) {
       setError(err.message || "The character could not reply.");
@@ -231,37 +237,45 @@ const styles = {
     right: "1rem",
     display: "flex",
     flexDirection: "column",
-    alignItems: "flex-start",
+    alignItems: "center",
   },
   speechBubble: {
+    position: "relative",
+    display: "inline-block",
+    maxWidth: "100%",
     background: T.surface,
-    border: `2px solid ${T.ink}`,
-    borderRadius: 16,
-    padding: "0.85rem 1rem",
+    border: `1px solid ${T.border}`,
+    borderRadius: 20,
+    padding: "0.8rem 1.1rem",
     fontSize: "0.92rem",
-    lineHeight: 1.55,
+    lineHeight: 1.5,
     color: T.ink,
-    width: "100%",
+    textAlign: "center",
     boxSizing: "border-box",
     maxHeight: 200,
     overflowY: "auto",
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
+    boxShadow: "0 6px 20px rgba(31,35,40,0.12)",
   },
   speechBubbleEmpty: {
     color: T.inkMuted,
     fontStyle: "italic",
-    borderColor: T.borderStrong,
-    borderStyle: "dashed",
+    boxShadow: "0 2px 8px rgba(31,35,40,0.06)",
   },
-  // CSS triangle tail pointing down toward the avatar's mouth
+  // Rotated square that overlaps the bubble's bottom edge to form the tail
+  // pointing down toward the avatar's head. Only the two outward edges carry
+  // the border so it reads as a continuation of the bubble outline.
   bubbleTail: {
-    marginLeft: "2.25rem",
-    width: 0,
-    height: 0,
-    borderLeft: "9px solid transparent",
-    borderRight: "9px solid transparent",
-    borderTop: `13px solid ${T.ink}`,
+    width: 16,
+    height: 16,
+    marginTop: -8,
+    background: T.surface,
+    borderRight: `1px solid ${T.border}`,
+    borderBottom: `1px solid ${T.border}`,
+    borderBottomRightRadius: 3,
+    transform: "rotate(45deg)",
+    boxShadow: "4px 4px 10px rgba(31,35,40,0.08)",
   },
   typingDots: {
     letterSpacing: "0.2em",

@@ -24,7 +24,7 @@ from app.mock_data import mock_scene
 from app.schemas import ChatTurn, PlotSuggestion, SceneRequest, SceneResponse
 from app.services import providers, store
 from app.services.chat import _EMOTION_INSTRUCTION, _split_emotion
-from app.services.extraction import get_character
+from app.services.extraction import ensure_personas
 from app.services.persona_prompt import build_system_prompt
 
 logger = logging.getLogger(__name__)
@@ -42,22 +42,25 @@ _NARRATOR_SYSTEM = (
 
 
 def run_scene(req: SceneRequest) -> SceneResponse:
-    # 1. Validate + load. Fail fast on a bad id so it never surfaces mid-loop.
-    characters = [get_character(cid) for cid in req.character_ids]
-    missing = [cid for cid, c in zip(req.character_ids, characters) if c is None]
-    if missing:
-        raise ValueError(f"Unknown character(s): {', '.join(missing)}")
-
     if settings.backend == Backend.MOCK:
         dialogue, suggestion = mock_scene(req.character_ids)
         return SceneResponse(dialogue=dialogue, suggestion=suggestion)
+
+    # 1. Validate + load, grounding each persona on first use (Stage 4) at the
+    #    requested timeline boundary. Fail fast on a bad id so it never surfaces
+    #    mid-loop.
+    characters = ensure_personas(req.character_ids, req.knowledge_up_to_chunk)
 
     provider = providers.get_provider()
     id_to_name = {c.id: c.name for c in characters}
     by_id = {c.id: c for c in characters}
 
-    # 2. Ground each character once, privately, seeded on the situation.
-    grounding = {c.id: _ground(provider, req.situation, c) for c in characters}
+    # 2. Ground each character once, privately, seeded on the situation. The
+    #    same timeline boundary keeps their scene knowledge spoiler-safe.
+    grounding = {
+        c.id: _ground(provider, req.situation, c, req.knowledge_up_to_chunk)
+        for c in characters
+    }
 
     # 3. Transcript. The situation is scene context, not a spoken line.
     dialogue: list[ChatTurn] = []
@@ -109,14 +112,17 @@ def run_scene(req: SceneRequest) -> SceneResponse:
 # --- grounding ---------------------------------------------------------------
 
 
-def _ground(provider, situation: str, character) -> list[str]:
+def _ground(provider, situation: str, character, up_to_chunk=None) -> list[str]:
     """One retrieval per character, seeded on the situation + who they are so
-    each character's grounding is genuinely their own. Best-effort: retrieval
-    failures degrade to a persona-only prompt rather than erroring the scene."""
+    each character's grounding is genuinely their own. `up_to_chunk` keeps it
+    spoiler-safe. Best-effort: retrieval failures degrade to a persona-only
+    prompt rather than erroring the scene."""
     query = f"{situation}\n{character.name}: {', '.join(character.traits)}"
     try:
         query_vec = provider.embed([query])[0]
-        results = store.get_vector_store().search(query_vec, top_k=_RETRIEVAL_TOP_K)
+        results = store.get_vector_store().search(
+            query_vec, top_k=_RETRIEVAL_TOP_K, up_to_chunk=up_to_chunk
+        )
     except Exception as exc:
         logger.warning("Scene grounding failed for %s: %s", character.id, exc)
         return []

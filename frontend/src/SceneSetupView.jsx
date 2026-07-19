@@ -3,6 +3,9 @@
 // has a one-on-one chat feature, this page carries a mode toggle: in "Scene"
 // mode the writer combines one or more characters into a live stage; in "Chat"
 // mode they pick a single character and open the classic chat thread.
+//
+// This page lists the *whole* cast discovered at upload. Persona cards no
+// longer exist here — they're grounded on demand when a chat/scene is entered.
 
 import { useMemo, useState } from "react";
 import { initials, colorFor } from "./avatar";
@@ -17,10 +20,7 @@ export default function SceneSetupView({
 }) {
   const characters = result?.characters ?? [];
   const chunkCount = result?.chunk_count ?? 0;
-  const idToName = useMemo(
-    () => Object.fromEntries(characters.map((c) => [c.id, c.name])),
-    [characters]
-  );
+  const timelineSummaries = result?.timeline ?? [];
 
   const [mode, setMode] = useState("scene"); // "scene" | "chat"
 
@@ -68,19 +68,37 @@ export default function SceneSetupView({
       ? "full manuscript"
       : `${timeline}% in${knowledgeChunk ? ` · up to chunk ${knowledgeChunk}` : ""}`;
 
+  // "What happens" at the current point, from the ingestion-time timeline
+  // summaries. The slider position maps to a chunk index; find the span it
+  // falls in and show that span's one-line recap.
+  const currentChunk =
+    chunkCount > 0
+      ? timeline >= 100
+        ? chunkCount - 1
+        : Math.max(0, (knowledgeChunk ?? 1) - 1)
+      : 0;
+  const timelineSummary = useMemo(() => {
+    const span = timelineSummaries.find(
+      (t) => currentChunk >= t.chunk_start && currentChunk <= t.chunk_end
+    );
+    return span?.summary || "";
+  }, [timelineSummaries, currentChunk]);
+
   const canGo = mode === "chat" ? selectedList.length === 1 : selectedList.length >= 1;
+
+  const knowledgeUpToChunk = timeline >= 100 ? null : knowledgeChunk;
 
   const submit = () => {
     if (!canGo) return;
     if (mode === "chat") {
-      onStartChat?.(selectedList[0]);
+      onStartChat?.(selectedList[0], { knowledgeUpToChunk });
       return;
     }
     onEnterScene?.({
       characterIds: selectedList.map((c) => c.id),
       situation: "",
       timeline,
-      knowledgeUpToChunk: timeline >= 100 ? null : knowledgeChunk,
+      knowledgeUpToChunk,
     });
   };
 
@@ -226,7 +244,20 @@ export default function SceneSetupView({
               onChange={(e) => setTimeline(Number(e.target.value))}
               style={styles.slider}
             />
-            <div style={styles.timelineReadout}>{timelineLabel}</div>
+            {/* Show what's actually happening at this point, from the timeline
+                summaries extracted at upload — not just a bare percentage. */}
+            <div style={styles.timelineReadout}>
+              {timelineSummary
+                ? `“${timelineSummary}”`
+                : timeline >= 100
+                ? "They know how the whole story ends."
+                : "They know the story up to this point."}
+            </div>
+            <div style={styles.timelineSub}>
+              {timeline >= 100
+                ? "The full manuscript"
+                : `${timelineLabel}`}
+            </div>
           </div>
 
           <button
@@ -237,94 +268,14 @@ export default function SceneSetupView({
             {mode === "chat" ? "Start chat →" : "Enter scene →"}
           </button>
 
-          {selectedList.length > 0 && (
-            <section style={styles.cardsSection}>
-              <h2 style={styles.cardsTitle}>
-                {selectedList.length === 1 ? "Persona card" : "Persona cards"}
-              </h2>
-              <div style={styles.cardGrid}>
-                {selectedList.map((c) => (
-                  <PersonaCard key={c.id} c={c} idToName={idToName} />
-                ))}
-              </div>
-            </section>
-          )}
+          <p style={styles.groundNote}>
+            {mode === "chat"
+              ? "We'll build this character's persona from the manuscript when you start."
+              : "We'll build each character's persona from the manuscript when you enter the scene."}
+          </p>
         </div>
       </main>
     </div>
-  );
-}
-
-function PersonaCard({ c, idToName }) {
-  const relationships = Object.entries(c.relationships || {});
-  const sub = [
-    c.gender,
-    typeof c.first_appearance_chunk === "number" &&
-      `first appears in chunk ${c.first_appearance_chunk}`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  return (
-    <article style={styles.card}>
-      <div style={styles.cardHead}>
-        <div style={{ ...styles.cardAvatar, background: colorFor(c.id) }}>
-          {initials(c.name)}
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={styles.cardName}>{c.name}</div>
-          {sub && <div style={styles.cardSub}>{sub}</div>}
-        </div>
-      </div>
-
-      {c.traits?.length > 0 && (
-        <div style={styles.chips}>
-          {c.traits.map((t) => (
-            <span key={t} style={styles.chip}>
-              {t}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {c.physical && (
-        <p style={styles.cardField}>
-          <span style={styles.cardFieldLabel}>Appearance</span>
-          <span style={styles.cardBody}>{c.physical}</span>
-        </p>
-      )}
-
-      {c.voice && (
-        <p style={styles.cardVoice}>
-          <span style={styles.cardFieldLabel}>Voice</span>
-          {c.voice}
-        </p>
-      )}
-
-      {c.motivations?.length > 0 && (
-        <div style={styles.cardField}>
-          <span style={styles.cardFieldLabel}>Motivations</span>
-          <ul style={styles.motList}>
-            {c.motivations.map((m) => (
-              <li key={m}>{m}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {relationships.length > 0 && (
-        <div style={styles.cardField}>
-          <span style={styles.cardFieldLabel}>Relationships</span>
-          <div style={styles.rels}>
-            {relationships.map(([id, nature]) => (
-              <div key={id} style={styles.relRow}>
-                <span style={styles.relName}>{idToName[id] || id}</span>
-                <span style={styles.relNature}>{nature}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </article>
   );
 }
 
@@ -520,7 +471,24 @@ const styles = {
     marginBottom: "0.6rem",
   },
   slider: { width: "100%", accentColor: "#7c5cff", cursor: "pointer" },
-  timelineReadout: { fontSize: "0.8rem", color: "#57606a", marginTop: "0.4rem" },
+  timelineReadout: {
+    fontSize: "0.9rem",
+    color: "#1f2328",
+    fontStyle: "italic",
+    marginTop: "0.5rem",
+    lineHeight: 1.5,
+  },
+  timelineSub: {
+    fontSize: "0.72rem",
+    color: "#8c959f",
+    marginTop: "0.25rem",
+  },
+  groundNote: {
+    marginTop: "1rem",
+    fontSize: "0.78rem",
+    color: "#8c959f",
+    lineHeight: 1.5,
+  },
   enterBtn: {
     background: "#6a4bff",
     color: "#fff",
@@ -534,92 +502,4 @@ const styles = {
     marginTop: "0.5rem",
   },
   enterBtnOff: { background: "#c9c4e8", cursor: "not-allowed" },
-  // ── persona cards ──
-  cardsSection: { marginTop: "2.5rem" },
-  cardsTitle: {
-    fontSize: "0.68rem",
-    fontWeight: 700,
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "#8c959f",
-    margin: "0 0 0.85rem",
-  },
-  cardGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-    gap: "1rem",
-  },
-  card: {
-    background: "#fff",
-    border: "1px solid #e4e2d8",
-    borderRadius: 12,
-    padding: "1.1rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-  },
-  cardHead: { display: "flex", alignItems: "center", gap: "0.7rem" },
-  cardAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: "50%",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: "0.8rem",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  cardName: {
-    fontWeight: 700,
-    fontSize: "1rem",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-  cardSub: { fontSize: "0.72rem", color: "#8c959f" },
-  chips: { display: "flex", flexWrap: "wrap", gap: "0.35rem" },
-  chip: {
-    background: "#efeafc",
-    color: "#5a44c4",
-    borderRadius: 999,
-    padding: "0.2rem 0.6rem",
-    fontSize: "0.75rem",
-    fontWeight: 500,
-  },
-  cardField: { display: "flex", flexDirection: "column", gap: "0.3rem", margin: 0 },
-  cardFieldLabel: {
-    display: "block",
-    fontSize: "0.66rem",
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    color: "#8c959f",
-  },
-  cardBody: { fontSize: "0.85rem", color: "#3d4650" },
-  cardVoice: {
-    margin: 0,
-    fontSize: "0.85rem",
-    color: "#3d4650",
-    fontStyle: "italic",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.3rem",
-  },
-  motList: {
-    margin: 0,
-    paddingLeft: "1.1rem",
-    fontSize: "0.85rem",
-    color: "#3d4650",
-  },
-  rels: { display: "flex", flexDirection: "column", gap: "0.3rem" },
-  relRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "0.75rem",
-    fontSize: "0.82rem",
-  },
-  relName: { fontWeight: 600, color: "#1f2328", flexShrink: 0 },
-  relNature: { color: "#57606a", textAlign: "right" },
 };

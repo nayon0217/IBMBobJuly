@@ -8,11 +8,10 @@ import { T } from "./theme";
 
 const STAGES = [
   "Reading your manuscript…",
-  "Splitting it into scenes…",
   "Building the vector index…",
   "Discovering characters…",
   "Merging names and aliases…",
-  "Grounding persona cards in the text…",
+  "Mapping the timeline…",
 ];
 
 export default function ProcessingView({ title, error, onBack }) {

@@ -13,7 +13,10 @@ Returns `{ "status": "ok", "backend": "mock" | "watsonx" }`.
 Use it to confirm which backend the frontend is talking to.
 
 ## `POST /extract`
-Manuscript in, characters out.
+Manuscript in, cast out. Ingestion only: embed + index chunks, discover the
+canonical roster, summarize the timeline. Returns **un-grounded stubs** (`id`,
+`name`, timeline anchors, `grounded: false`) for the whole cast. Per-character
+persona grounding is deferred to `POST /personas`.
 
 Request:
 ```json
@@ -22,10 +25,30 @@ Request:
 Response:
 ```json
 {
-  "characters": [ PersonaCard, ... ],
-  "chunk_count": 12
+  "characters": [ PersonaCard (stub), ... ],
+  "chunk_count": 12,
+  "timeline": [ { "chunk_start": 0, "chunk_end": 1, "summary": "..." }, ... ]
 }
 ```
+
+## `POST /personas`
+Ground the requested characters into full persona cards (Stage 4), on demand,
+when a chat/scene is entered. Caches results; unknown ids yield `404`.
+
+Request:
+```json
+{
+  "character_ids": ["elizabeth-bennet", "fitzwilliam-darcy"],
+  "knowledge_up_to_chunk": 8
+}
+```
+Response:
+```json
+{ "characters": [ PersonaCard, ... ] }
+```
+`knowledge_up_to_chunk` (optional) grounds each persona from only the passages
+up to that timeline point, so the card reflects who the character is *then*.
+Part of the cache key. `/scene` accepts the same field, mirroring `/chat`.
 
 ## `POST /chat`
 Talk to one character, in voice, grounded in the manuscript.

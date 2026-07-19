@@ -1,23 +1,35 @@
 // App.jsx — root component and screen router. The user moves through screens:
-// Upload -> Processing (loading) -> Scene setup. From scene setup they can chat
-// one-on-one with a character, or set up and enter a multi-character scene.
+// Upload -> Processing (extract: discover the cast) -> Scene setup. From scene
+// setup they pick who to chat/stage with; entering a chat or scene grounds the
+// selected persona cards on demand (Grounding screen) before rendering.
 
 import { useState } from "react";
 import UploadView from "./UploadView";
 import ProcessingView from "./ProcessingView";
+import PersonaLoadingView from "./PersonaLoadingView";
 import ChatView from "./ChatView";
 import SceneSetupView from "./SceneSetupView";
 import SceneView from "./SceneView";
-import { extract } from "./api";
+import { extract, personas } from "./api";
 
 export default function App() {
-  const [phase, setPhase] = useState("upload"); // upload | processing | chat | sceneSetup | scene
+  // upload | processing | sceneSetup | grounding | chat | scene
+  const [phase, setPhase] = useState("upload");
   const [result, setResult] = useState(null);
   const [title, setTitle] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [error, setError] = useState("");
+
+  // Grounded (Stage 4) persona cards for the active chat/scene.
   const [activeCharacter, setActiveCharacter] = useState(null);
+  const [activeKnowledge, setActiveKnowledge] = useState(null);
+  const [groundedCast, setGroundedCast] = useState([]);
   const [sceneConfig, setSceneConfig] = useState(null);
+
+  // Grounding-screen state.
+  const [groundingMode, setGroundingMode] = useState("chat"); // "chat" | "scene"
+  const [groundingNames, setGroundingNames] = useState([]);
+  const [groundError, setGroundError] = useState("");
 
   async function handleSubmit(text, manuscriptTitle) {
     setTitle(manuscriptTitle);
@@ -42,25 +54,61 @@ export default function App() {
     setWordCount(0);
     setError("");
     setActiveCharacter(null);
+    setGroundedCast([]);
     setSceneConfig(null);
   }
 
-  function openChat(character) {
-    setActiveCharacter(character);
-    setPhase("chat");
+  const nameFor = (id) =>
+    result?.characters?.find((c) => c.id === id)?.name || id;
+
+  // Entering a chat grounds the chosen character (Stage 4) at the selected
+  // timeline point before rendering.
+  async function openChat(character, opts = {}) {
+    const knowledge = opts.knowledgeUpToChunk ?? null;
+    setGroundingMode("chat");
+    setGroundingNames([character.name]);
+    setGroundError("");
+    setActiveKnowledge(knowledge);
+    setPhase("grounding");
+    try {
+      const res = await personas([character.id], knowledge);
+      setActiveCharacter(res.characters[0]);
+      setPhase("chat");
+    } catch (e) {
+      setGroundError(e.message || "Could not build the persona.");
+    }
   }
 
-  function enterScene(config) {
+  // Entering a scene grounds the whole selected cast before rendering.
+  async function enterScene(config) {
     setSceneConfig(config);
-    setPhase("scene");
+    setGroundingMode("scene");
+    setGroundingNames(config.characterIds.map(nameFor));
+    setGroundError("");
+    setPhase("grounding");
+    try {
+      const res = await personas(
+        config.characterIds,
+        config.knowledgeUpToChunk ?? null
+      );
+      setGroundedCast(res.characters);
+      setPhase("scene");
+    } catch (e) {
+      setGroundError(e.message || "Could not build the personas.");
+    }
   }
 
   if (phase === "processing") {
+    return <ProcessingView title={title} error={error} onBack={reset} />;
+  }
+
+  if (phase === "grounding") {
     return (
-      <ProcessingView
-        title={title}
-        error={error}
-        onBack={reset}
+      <PersonaLoadingView
+        names={groundingNames}
+        mode={groundingMode}
+        error={groundError}
+        onBack={() => setPhase("sceneSetup")}
       />
     );
   }
@@ -69,8 +117,9 @@ export default function App() {
     return (
       <ChatView
         character={activeCharacter}
-        characters={result?.characters ?? []}
+        characters={activeCharacter ? [activeCharacter] : []}
         title={title}
+        knowledgeUpToChunk={activeKnowledge}
         onBack={() => setPhase("sceneSetup")}
       />
     );
@@ -92,7 +141,7 @@ export default function App() {
   if (phase === "scene") {
     return (
       <SceneView
-        characters={result?.characters ?? []}
+        characters={groundedCast}
         characterIds={sceneConfig?.characterIds ?? []}
         title={title}
         situation={sceneConfig?.situation ?? ""}

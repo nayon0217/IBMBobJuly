@@ -12,6 +12,40 @@ import { runScene } from "./api";
 
 const MAX_TURNS = 6;
 
+// The stage backdrop tints itself to match the scene the writer describes.
+// Each entry pairs a set of trigger words with a top→bottom gradient that
+// evokes that setting/mood. The first matching palette wins, so more specific
+// moods are listed before broader ones. `DEFAULT_STAGE_GRADIENT` is the dusk
+// tone used when nothing matches.
+const DEFAULT_STAGE_GRADIENT =
+  "linear-gradient(180deg, #3b2f5e 0%, #6a4a6b 55%, #a97e86 100%)";
+
+const SCENE_GRADIENTS = [
+  { words: ["night", "midnight", "moon", "moonlight", "starlit", "stars", "dark"], gradient: "linear-gradient(180deg, #0b1026 0%, #1c2450 55%, #2e3b6b 100%)" },
+  { words: ["dawn", "sunrise", "morning", "daybreak"], gradient: "linear-gradient(180deg, #2b3a67 0%, #c56b8e 55%, #f2c17d 100%)" },
+  { words: ["sunset", "dusk", "evening", "twilight"], gradient: "linear-gradient(180deg, #4a2c5e 0%, #a3436b 55%, #e8965a 100%)" },
+  { words: ["rain", "storm", "thunder", "fog", "mist", "grey", "gray", "gloom", "overcast"], gradient: "linear-gradient(180deg, #2f3a44 0%, #4a5a66 55%, #7c8a94 100%)" },
+  { words: ["fire", "flame", "flames", "burning", "inferno", "blaze", "ember"], gradient: "linear-gradient(180deg, #3a0d0d 0%, #7a1f12 55%, #c25a2a 100%)" },
+  { words: ["snow", "winter", "ice", "icy", "frost", "cold", "blizzard"], gradient: "linear-gradient(180deg, #3a4a63 0%, #7f95b3 55%, #d6e3ef 100%)" },
+  { words: ["forest", "woods", "wood", "garden", "meadow", "tree", "trees", "jungle", "grove"], gradient: "linear-gradient(180deg, #12351f 0%, #2f6b3a 55%, #7fae6a 100%)" },
+  { words: ["sea", "ocean", "beach", "shore", "water", "river", "lake", "harbour", "harbor", "coast", "waves"], gradient: "linear-gradient(180deg, #08313f 0%, #12667a 55%, #4fb0b8 100%)" },
+  { words: ["desert", "sand", "sun", "sunny", "heat", "dune"], gradient: "linear-gradient(180deg, #5a3410 0%, #b3742a 55%, #e8c06a 100%)" },
+  { words: ["war", "battle", "blood", "death", "duel", "fight"], gradient: "linear-gradient(180deg, #2a0d0d 0%, #5e1f22 55%, #8a3a3a 100%)" },
+  { words: ["love", "romance", "kiss", "rose", "wedding"], gradient: "linear-gradient(180deg, #4a1f3a 0%, #a3436b 55%, #e39ab0 100%)" },
+  { words: ["ball", "ballroom", "party", "palace", "candle", "candlelight", "feast", "banquet"], gradient: "linear-gradient(180deg, #3a1f2e 0%, #7a3a4a 55%, #c98a6a 100%)" },
+];
+
+// Pick a stage gradient from the scene description. Matches on whole words so a
+// scene like "trapped by rain in a parlour" tints stormy grey.
+function gradientForScene(text) {
+  if (!text) return DEFAULT_STAGE_GRADIENT;
+  const haystack = ` ${text.toLowerCase().replace(/[^a-z\s]/g, " ")} `;
+  for (const { words, gradient } of SCENE_GRADIENTS) {
+    if (words.some((w) => haystack.includes(` ${w} `))) return gradient;
+  }
+  return DEFAULT_STAGE_GRADIENT;
+}
+
 // While the backend is thinking, the stage plays a little "conversation":
 // a typing bubble hops from actor to actor and their faces cycle through
 // these expressions so the wait feels alive rather than frozen.
@@ -25,6 +59,7 @@ export default function SceneView({
   characterIds = [],
   title,
   situation = "",
+  knowledgeUpToChunk = null,
   onBack,
 }) {
   const cast = useMemo(
@@ -46,6 +81,16 @@ export default function SceneView({
   // Transient per-character expressions shown only during the wait.
   const [thinkingEmotions, setThinkingEmotions] = useState({});
 
+  // Seed the composer with the situation the writer sketched during setup.
+  const [input, setInput] = useState(situation);
+  // The scene description that's currently "on stage" — drives the backdrop
+  // tint. Seeded with the setup situation so the stage is themed on arrival.
+  const [sceneText, setSceneText] = useState(situation);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [played, setPlayed] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
+
   // Generated avatar per character id, derived from the persona card's physical
   // description — same pipeline as the one-on-one chat page. While loading, the
   // mouth follows the animated "thinking" expression so the faces come alive;
@@ -64,6 +109,9 @@ export default function SceneView({
   // The actor whose typing bubble is currently showing while we wait.
   const activeSpeakerId =
     loading && cast.length > 0 ? cast[thinkingTick % cast.length].id : null;
+
+  // Backdrop gradient chosen from the scene on stage.
+  const stageGradient = useMemo(() => gradientForScene(sceneText), [sceneText]);
 
   // Drive the wait animation: hop the speaking bubble and reshuffle every
   // actor's expression on a fixed cadence until the scene resolves.
@@ -91,12 +139,6 @@ export default function SceneView({
 
     return () => clearInterval(id);
   }, [loading, cast]);
-  // Seed the composer with the situation the writer sketched during setup.
-  const [input, setInput] = useState(situation);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [played, setPlayed] = useState(false);
-  const [suggestion, setSuggestion] = useState(null);
 
   async function playScene(e) {
     e?.preventDefault();
@@ -108,12 +150,14 @@ export default function SceneView({
     setBubbles({});
     setEmotions({});
     setSuggestion(null);
+    setSceneText(description);
 
     try {
       // POST /scene with { character_ids, situation, max_turns } — one or more
       // characters; the backend runs the round-robin + name-callout scene.
       const res = await runScene(cast.map((c) => c.id), description, {
         maxTurns: MAX_TURNS,
+        knowledgeUpToChunk,
       });
       const latest = {};
       const latestEmotion = {};
@@ -162,7 +206,7 @@ export default function SceneView({
 
       {/* ── stage ── */}
       <main style={styles.stageWrap}>
-        <div style={styles.stage}>
+        <div style={{ ...styles.stage, background: stageGradient }}>
           <div style={styles.stageLabel}>
             {loading ? "Scene in progress…" : played ? "Scene" : "Set the scene"}
           </div>
@@ -211,6 +255,9 @@ export default function SceneView({
                     style={{
                       ...styles.actorAvatar,
                       background: colorFor(c.id),
+                      // Bigger until this actor's final line lands, so the
+                      // stage doesn't feel empty before the scene plays.
+                      ...(bubbles[c.id] ? {} : styles.actorAvatarIdle),
                       ...(isSpeaking ? styles.actorAvatarSpeaking : {}),
                     }}
                   />
@@ -344,7 +391,8 @@ const styles = {
   stage: {
     flex: 1,
     borderRadius: 16,
-    background: "linear-gradient(180deg, #3b2f5e 0%, #6a4a6b 55%, #a97e86 100%)",
+    background: DEFAULT_STAGE_GRADIENT,
+    transition: "background 0.8s ease",
     position: "relative",
     display: "flex",
     alignItems: "flex-end",
@@ -439,13 +487,19 @@ const styles = {
     marginBottom: "0.75rem",
   },
   actorAvatar: {
-    width: 64,
-    height: 64,
+    width: 88,
+    height: 88,
     borderRadius: "50%",
     objectFit: "cover",
     border: "3px solid rgba(255,255,255,0.65)",
     boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
-    transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+    transition:
+      "width 0.35s ease, height 0.35s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+  },
+  // Larger while the actor has no final line yet (setup + thinking).
+  actorAvatarIdle: {
+    width: 140,
+    height: 140,
   },
   actorAvatarSpeaking: {
     borderColor: "#fff",

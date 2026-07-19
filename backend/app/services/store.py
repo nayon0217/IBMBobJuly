@@ -19,7 +19,7 @@ import math
 from typing import Protocol, runtime_checkable
 
 from app.config import Backend, settings
-from app.schemas import PersonaCard
+from app.schemas import PersonaCard, TimelineEntry
 from app.services.gender import infer_gender
 
 logger = logging.getLogger(__name__)
@@ -122,15 +122,79 @@ def reset_vector_store() -> None:
     _vector_store = None
 
 
-# --- persona registry (in-memory) --------------------------------------------
+# --- ingestion registries (in-memory) ----------------------------------------
+# Persona grounding (Stage 4) now runs lazily, after upload, so the material it
+# needs must survive between /extract and /personas: the survivor roster (who
+# exists + their alias/appearance metadata), the raw chunk texts (grounding +
+# gender inference read them), and the timeline summaries.
 
-_characters: list[PersonaCard] = []
+_roster: list[dict] = []
+_chunks: list[str] = []
+_timeline: list[TimelineEntry] = []
+
+
+def save_roster(roster: list[dict]) -> None:
+    """Store the Stage 1–3 survivor roster (new upload = clean slate)."""
+    global _roster
+    _roster = list(roster)
+
+
+def get_roster() -> list[dict]:
+    return list(_roster)
+
+
+def get_roster_entry(character_id: str) -> dict | None:
+    return next((e for e in _roster if e.get("id") == character_id), None)
+
+
+def save_chunks(chunks: list[str]) -> None:
+    """Keep the raw chunk texts so deferred grounding + gender inference (which
+    scan the manuscript directly) work without re-uploading."""
+    global _chunks
+    _chunks = list(chunks)
+
+
+def get_chunks() -> list[str]:
+    return list(_chunks)
+
+
+def save_timeline(timeline: list[TimelineEntry]) -> None:
+    global _timeline
+    _timeline = list(timeline)
+
+
+def get_timeline() -> list[TimelineEntry]:
+    return list(_timeline)
+
+
+# --- persona registry (in-memory) --------------------------------------------
+# Only *grounded* cards live here; they are filled in on demand by /personas.
+# A card is grounded at a specific timeline boundary (knowledge_up_to_chunk), so
+# the same character grounded at two points in the story is two distinct cards —
+# hence the cache is keyed by (id, knowledge_up_to_chunk). None = whole story.
+
+_grounded: dict[tuple[str, int | None], PersonaCard] = {}
 
 
 def save_characters(characters: list[PersonaCard]) -> None:
-    global _characters
-    _characters = list(characters)
-    _backfill_genders(_characters)
+    """Bulk-replace the cache with timeline-agnostic cards (knowledge=None).
+    Used by the gender backfill path and tests."""
+    global _grounded
+    _grounded = {(c.id, None): c for c in characters}
+    _backfill_genders(list(_grounded.values()))
+
+
+def save_character(card: PersonaCard, knowledge_up_to_chunk: int | None = None) -> None:
+    """Cache one grounded card at its timeline boundary."""
+    _grounded[(card.id, knowledge_up_to_chunk)] = card
+
+
+def get_id_to_name() -> dict[str, str]:
+    """Map every known character id -> display name, spanning the whole roster
+    (not just the cards grounded so far) so chat/scene can label any speaker."""
+    names = {e["id"]: e["canonical_name"] for e in _roster if e.get("id")}
+    names.update({c.id: c.name for c in _grounded.values()})
+    return names
 
 
 def _backfill_genders(characters: list[PersonaCard]) -> None:
@@ -157,16 +221,26 @@ def _backfill_genders(characters: list[PersonaCard]) -> None:
 
 
 def get_characters() -> list[PersonaCard]:
-    return list(_characters)
+    return list(_grounded.values())
 
 
-def get_character(character_id: str) -> PersonaCard | None:
-    return next((c for c in _characters if c.id == character_id), None)
+def get_character(
+    character_id: str, knowledge_up_to_chunk: int | None = None
+) -> PersonaCard | None:
+    """The grounded card for this id at the given timeline boundary. When no
+    boundary is given, falls back to any grounded card for the id (generic
+    lookups that don't care which point in the story it was grounded at)."""
+    card = _grounded.get((character_id, knowledge_up_to_chunk))
+    if card is not None:
+        return card
+    if knowledge_up_to_chunk is None:
+        return next((c for (cid, _), c in _grounded.items() if cid == character_id), None)
+    return None
 
 
 def clear_characters() -> None:
-    global _characters
-    _characters = []
+    global _grounded
+    _grounded = {}
 
 
 # --- helpers ------------------------------------------------------------------

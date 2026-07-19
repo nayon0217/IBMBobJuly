@@ -51,6 +51,14 @@ class PersonaCard(BaseModel):
         description="Index of the first chunk this character appears in; used "
         "to default the timeline. None if never matched by name.",
     )
+    grounded: bool = Field(
+        True,
+        description="Whether the persona has been grounded (Stage 4). /extract "
+        "now returns un-grounded stubs (id + name + timeline anchors) for the "
+        "whole cast; the voice/traits/physical/gender fields are filled in "
+        "lazily by /personas when a chat or scene is entered. Full cards "
+        "(mock samples, cached grounded cards) are True.",
+    )
 
 
 class Emotion(str, Enum):
@@ -86,14 +94,47 @@ class ChatTurn(BaseModel):
 # --- /extract ----------------------------------------------------------------
 
 
+class TimelineEntry(BaseModel):
+    """A very short summary of a span of manuscript chunks, produced during
+    ingestion so the frontend can show *what happens* at each point on the
+    timeline slider (and it backs the knowledge_up_to_chunk spoiler control)."""
+
+    chunk_start: int = Field(..., description="First chunk index in this span")
+    chunk_end: int = Field(..., description="Last chunk index in this span (inclusive)")
+    summary: str = Field("", description="One-line recap of the span")
+
+
 class ExtractRequest(BaseModel):
     manuscript_text: str = Field(..., description="Raw manuscript text")
     title: Optional[str] = None
 
 
 class ExtractResponse(BaseModel):
+    # Un-grounded character stubs (id + name + timeline anchors). Persona cards
+    # are grounded later, on demand, by /personas — see PersonaCard.grounded.
     characters: list[PersonaCard]
     chunk_count: int = Field(..., description="How many chunks were embedded")
+    timeline: list[TimelineEntry] = Field(
+        default_factory=list,
+        description="Per-span summaries of the manuscript, in chunk order.",
+    )
+
+
+# --- /personas (lazy Stage 4 grounding) --------------------------------------
+
+
+class PersonaRequest(BaseModel):
+    # The characters the writer is about to chat with / stage a scene with.
+    character_ids: list[str] = Field(..., min_length=1)
+    # Timeline boundary: ground each persona from ONLY what the character has
+    # experienced up to this chunk, so their personality reflects that point in
+    # the story (spoiler-safe). None = the whole manuscript.
+    knowledge_up_to_chunk: Optional[int] = None
+
+
+class PersonaResponse(BaseModel):
+    # Fully grounded persona cards, aligned index-for-index with the request.
+    characters: list[PersonaCard]
 
 
 # --- /chat (single character) ------------------------------------------------
@@ -123,6 +164,9 @@ class SceneRequest(BaseModel):
     situation: str = Field(..., description="The setup the writer drops them into")
     twist: Optional[str] = Field(None, description="Optional mid-scene curveball")
     max_turns: int = Field(6, ge=1, le=20)
+    # Same timeline boundary as /chat and /personas: the characters only know
+    # events up to this chunk, applied to both grounding and scene retrieval.
+    knowledge_up_to_chunk: Optional[int] = None
 
 
 class PlotSuggestion(BaseModel):

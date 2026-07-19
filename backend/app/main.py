@@ -14,6 +14,8 @@ from app.schemas import (
     ExtractRequest,
     ExtractResponse,
     HealthResponse,
+    PersonaRequest,
+    PersonaResponse,
     SceneRequest,
     SceneResponse,
 )
@@ -41,6 +43,20 @@ def health() -> HealthResponse:
 @app.post("/extract", response_model=ExtractResponse)
 def extract(req: ExtractRequest) -> ExtractResponse:
     return extraction_service.extract(req)
+
+
+@app.post("/personas", response_model=PersonaResponse)
+def personas(req: PersonaRequest) -> PersonaResponse:
+    """Ground (Stage 4) and return the requested persona cards. Called when the
+    writer enters a chat or scene, after /extract returned un-grounded stubs."""
+    try:
+        return PersonaResponse(
+            characters=extraction_service.ensure_personas(
+                req.character_ids, req.knowledge_up_to_chunk
+            )
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @app.post("/chat", response_model=ChatResponse)

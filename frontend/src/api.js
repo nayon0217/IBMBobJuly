@@ -20,8 +20,23 @@ async function post(path, body) {
 export const health = () => fetch(`${BASE}/health`).then((r) => r.json());
 
 // ExtractRequest -> ExtractResponse
+// Returns un-grounded character stubs (id + name + timeline anchors) plus the
+// timeline summaries. Persona cards are grounded lazily via /personas.
 export const extract = (manuscriptText, title) =>
   post("/extract", { manuscript_text: manuscriptText, title });
+
+// PersonaRequest -> PersonaResponse
+// Grounds (Stage 4) and returns full persona cards for the given ids. Called
+// when entering a chat or scene; the backend caches results so re-entry is fast.
+// knowledgeUpToChunk is the timeline boundary the writer picked — the personas
+// reflect who the characters are up to that point only.
+export const personas = (characterIds, knowledgeUpToChunk = null) =>
+  post("/personas", {
+    character_ids: characterIds,
+    ...(knowledgeUpToChunk != null
+      ? { knowledge_up_to_chunk: knowledgeUpToChunk }
+      : {}),
+  });
 
 // ChatRequest -> ChatResponse
 export const chat = (characterId, message, history = [], knowledgeUpToChunk = null) =>

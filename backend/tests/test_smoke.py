@@ -27,6 +27,29 @@ def test_extract_returns_characters():
     assert body["chunk_count"] >= 1
 
 
+def test_extract_returns_ungrounded_stubs():
+    r = client.post("/extract", json={"manuscript_text": "Once upon a time..."})
+    body = r.json()
+    # /extract now returns un-grounded stubs — persona detail comes from /personas
+    assert all(c["grounded"] is False for c in body["characters"])
+    assert "timeline" in body
+
+
+def test_personas_grounds_characters():
+    client.post("/extract", json={"manuscript_text": "Once upon a time..."})
+    r = client.post("/personas", json={"character_ids": ["elizabeth-bennet"]})
+    assert r.status_code == 200
+    card = r.json()["characters"][0]
+    assert card["id"] == "elizabeth-bennet"
+    assert card["grounded"] is True
+    assert card["traits"]  # full card, not a stub
+
+
+def test_personas_unknown_404():
+    r = client.post("/personas", json={"character_ids": ["nobody"]})
+    assert r.status_code == 404
+
+
 def test_chat_known_character():
     r = client.post(
         "/chat", json={"character_id": "elizabeth-bennet", "message": "Hello?"}
@@ -51,4 +74,5 @@ def test_scene_returns_dialogue_and_suggestion():
     assert r.status_code == 200
     body = r.json()
     assert len(body["dialogue"]) >= 2
-    assert "what_happens_next" in body["suggestion"]
+    assert "summary" in body["suggestion"]
+    assert "character_feelings" in body["suggestion"]

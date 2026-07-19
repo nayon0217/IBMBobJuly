@@ -23,7 +23,7 @@ from app.config import Backend, settings
 from app.mock_data import mock_chat_reply
 from app.schemas import ChatRequest, ChatResponse, ChatTurn, Emotion
 from app.services import providers, store
-from app.services.extraction import get_character
+from app.services.extraction import ensure_persona
 from app.services.persona_prompt import build_system_prompt
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,11 @@ _HISTORY_TURNS_FOR_QUERY = 2
 
 
 def chat(req: ChatRequest) -> ChatResponse:
-    character = get_character(req.character_id)
+    # Grounds the persona on first use (Stage 4) at the requested timeline
+    # boundary, then caches it; raises for an unknown id (404 upstream). The
+    # same boundary bounds retrieval below, so the persona and the passages it
+    # answers from agree on how far the character has read.
+    character = ensure_persona(req.character_id, req.knowledge_up_to_chunk)
     if character is None:
         raise ValueError(f"Unknown character: {req.character_id}")
 
@@ -124,7 +128,7 @@ def _split_emotion(raw: str) -> tuple[Emotion, str]:
 
 
 def _build_user_prompt(character, req: ChatRequest) -> str:
-    id_to_name = {c.id: c.name for c in store.get_characters()}
+    id_to_name = store.get_id_to_name()
     lines = []
     for turn in req.history:
         speaker = (
