@@ -1,22 +1,25 @@
-// App.jsx — root component and screen router. The user moves through three
-// screens: Upload -> Processing (loading) -> Results (persona cards). From the
-// results screen they can open the full workspace (chat/scene) or start over.
+// App.jsx — root component and screen router. The user moves through screens:
+// Upload -> Processing (loading) -> Results (persona cards). From results they
+// can chat one-on-one with a character, or set up and enter a multi-character
+// scene.
 
 import { useState } from "react";
 import UploadView from "./UploadView";
 import ProcessingView from "./ProcessingView";
 import ResultsView from "./ResultsView";
 import ChatView from "./ChatView";
-import WorkspaceView from "./WorkspaceView";
+import SceneSetupView from "./SceneSetupView";
+import SceneView from "./SceneView";
 import { extract } from "./api";
 
 export default function App() {
-  const [phase, setPhase] = useState("upload"); // upload | processing | results | chat | workspace
+  const [phase, setPhase] = useState("upload"); // upload | processing | results | chat | sceneSetup | scene
   const [result, setResult] = useState(null);
   const [title, setTitle] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [error, setError] = useState("");
   const [activeCharacter, setActiveCharacter] = useState(null);
+  const [sceneConfig, setSceneConfig] = useState(null);
 
   async function handleSubmit(text, manuscriptTitle) {
     setTitle(manuscriptTitle);
@@ -41,11 +44,17 @@ export default function App() {
     setWordCount(0);
     setError("");
     setActiveCharacter(null);
+    setSceneConfig(null);
   }
 
   function openChat(character) {
     setActiveCharacter(character);
     setPhase("chat");
+  }
+
+  function enterScene(config) {
+    setSceneConfig(config);
+    setPhase("scene");
   }
 
   if (phase === "processing") {
@@ -66,7 +75,7 @@ export default function App() {
         wordCount={wordCount}
         onReset={reset}
         onOpenChat={openChat}
-        onOpenWorkspace={() => setPhase("workspace")}
+        onOpenScene={() => setPhase("sceneSetup")}
       />
     );
   }
@@ -82,13 +91,28 @@ export default function App() {
     );
   }
 
-  if (phase === "workspace") {
+  if (phase === "sceneSetup") {
     return (
-      <WorkspaceView
+      <SceneSetupView
         result={result}
         title={title}
         wordCount={wordCount}
-        onReset={reset}
+        onBack={() => setPhase("results")}
+        onStartChat={openChat}
+        onEnterScene={enterScene}
+      />
+    );
+  }
+
+  if (phase === "scene") {
+    return (
+      <SceneView
+        characters={result?.characters ?? []}
+        characterIds={sceneConfig?.characterIds ?? []}
+        title={title}
+        situation={sceneConfig?.situation ?? ""}
+        knowledgeUpToChunk={sceneConfig?.knowledgeUpToChunk ?? null}
+        onBack={() => setPhase("sceneSetup")}
       />
     );
   }

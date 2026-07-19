@@ -1,6 +1,10 @@
 // ResultsView.jsx — shown after extraction. Features the top-5 most-prominent
 // persona cards (the backend returns characters most-mentioned first) and lists
-// the full cast below. From here the writer can open the workspace or restart.
+// the full cast below. From here the writer can start a scene or restart.
+// Styled to match the scene page: warm canvas, colored avatars, purple accents.
+
+import { initials, colorFor } from "./avatar";
+import { T } from "./theme";
 
 const TOP_N = 5;
 
@@ -10,7 +14,7 @@ export default function ResultsView({
   wordCount = 0,
   onReset,
   onOpenChat,
-  onOpenWorkspace,
+  onOpenScene,
 }) {
   const characters = result?.characters ?? [];
   const chunkCount = result?.chunk_count ?? 0;
@@ -32,9 +36,9 @@ export default function ResultsView({
           </p>
         </div>
         <div style={styles.headerActions}>
-          {onOpenWorkspace && characters.length > 0 && (
-            <button style={styles.primaryBtn} onClick={onOpenWorkspace}>
-              Open workspace →
+          {onOpenScene && characters.length > 0 && (
+            <button style={styles.primaryBtn} onClick={onOpenScene}>
+              Create a scene →
             </button>
           )}
           <button style={styles.secondaryBtn} onClick={onReset}>
@@ -59,11 +63,10 @@ export default function ResultsView({
               {top.length < TOP_N ? "Persona cards" : "Top 5 characters"}
             </h2>
             <div style={styles.cardGrid}>
-              {top.map((c, i) => (
+              {top.map((c) => (
                 <PersonaCard
                   key={c.id}
                   c={c}
-                  rank={i + 1}
                   idToName={idToName}
                   onOpenChat={onOpenChat}
                 />
@@ -85,12 +88,17 @@ export default function ResultsView({
                     onClick={() => onOpenChat?.(c)}
                     title={`Chat with ${c.name}`}
                   >
-                    <span style={styles.listName}>{c.name}</span>
-                    {c.traits?.length > 0 && (
-                      <span style={styles.listTraits}>
-                        {c.traits.slice(0, 3).join(", ")}
-                      </span>
-                    )}
+                    <span style={{ ...styles.listAvatar, background: colorFor(c.id) }}>
+                      {initials(c.name)}
+                    </span>
+                    <span style={styles.listInfo}>
+                      <span style={styles.listName}>{c.name}</span>
+                      {c.traits?.length > 0 && (
+                        <span style={styles.listTraits}>
+                          {c.traits.slice(0, 3).join(", ")}
+                        </span>
+                      )}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -102,7 +110,7 @@ export default function ResultsView({
   );
 }
 
-function PersonaCard({ c, rank, idToName, onOpenChat }) {
+function PersonaCard({ c, idToName, onOpenChat }) {
   const relationships = Object.entries(c.relationships || {});
   return (
     <article
@@ -112,7 +120,9 @@ function PersonaCard({ c, rank, idToName, onOpenChat }) {
       title={onOpenChat ? `Chat with ${c.name}` : undefined}
     >
       <div style={styles.cardHead}>
-        <div style={styles.rank}>#{rank}</div>
+        <div style={{ ...styles.avatar, background: colorFor(c.id) }}>
+          {initials(c.name)}
+        </div>
         <div style={{ minWidth: 0 }}>
           <div style={styles.cardName}>{c.name}</div>
           {typeof c.first_appearance_chunk === "number" && (
@@ -172,9 +182,7 @@ function PersonaCard({ c, rank, idToName, onOpenChat }) {
         </div>
       )}
 
-      {onOpenChat && (
-        <div style={styles.cardCta}>Chat with {c.name} →</div>
-      )}
+      {onOpenChat && <div style={styles.cardCta}>Chat with {c.name} →</div>}
     </article>
   );
 }
@@ -182,9 +190,9 @@ function PersonaCard({ c, rank, idToName, onOpenChat }) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f7f8fa",
-    fontFamily: '-apple-system, "Segoe UI", system-ui, sans-serif',
-    color: "#1f2328",
+    background: T.bg,
+    fontFamily: T.font,
+    color: T.ink,
     lineHeight: 1.6,
     paddingBottom: "4rem",
   },
@@ -195,14 +203,14 @@ const styles = {
     gap: "1rem",
     flexWrap: "wrap",
     padding: "1.75rem 2rem 1.25rem",
-    background: "#fff",
-    borderBottom: "1px solid #e5e7eb",
+    background: T.surface,
+    borderBottom: `1px solid ${T.border}`,
   },
   headerLeft: { minWidth: 0 },
   logo: {
     fontSize: "0.8rem",
     fontWeight: 700,
-    color: "#8c959f",
+    color: T.inkMuted,
     letterSpacing: "0.02em",
     marginBottom: "0.35rem",
   },
@@ -212,13 +220,13 @@ const styles = {
     fontWeight: 700,
     letterSpacing: "-0.02em",
   },
-  meta: { margin: "0.25rem 0 0", color: "#57606a", fontSize: "0.85rem" },
+  meta: { margin: "0.25rem 0 0", color: T.inkSoft, fontSize: "0.85rem" },
   headerActions: { display: "flex", gap: "0.6rem", flexShrink: 0 },
   primaryBtn: {
-    background: "#1f2328",
+    background: T.accent,
     color: "#fff",
     border: "none",
-    borderRadius: 8,
+    borderRadius: T.radius,
     padding: "0.55rem 1.1rem",
     fontSize: "0.85rem",
     fontWeight: 600,
@@ -227,12 +235,12 @@ const styles = {
   },
   secondaryBtn: {
     background: "none",
-    border: "1px solid #d0d7de",
-    borderRadius: 8,
+    border: `1px solid ${T.borderStrong}`,
+    borderRadius: T.radius,
     padding: "0.55rem 1.1rem",
     fontSize: "0.85rem",
     cursor: "pointer",
-    color: "#57606a",
+    color: T.inkSoft,
     fontFamily: "inherit",
   },
   main: { maxWidth: 1080, margin: "0 auto", padding: "2rem" },
@@ -247,8 +255,8 @@ const styles = {
     gap: "1.25rem",
   },
   card: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
+    background: T.surface,
+    border: `1px solid ${T.border}`,
     borderRadius: 12,
     padding: "1.25rem",
     display: "flex",
@@ -259,20 +267,19 @@ const styles = {
   cardCta: {
     marginTop: "auto",
     paddingTop: "0.75rem",
-    borderTop: "1px solid #f0f3f6",
-    color: "#3b82d4",
+    borderTop: `1px solid ${T.border}`,
+    color: T.accent,
     fontSize: "0.82rem",
     fontWeight: 600,
   },
   cardHead: { display: "flex", alignItems: "center", gap: "0.75rem" },
-  rank: {
-    width: 30,
-    height: 30,
+  avatar: {
+    width: 40,
+    height: 40,
     borderRadius: "50%",
-    background: "#eef2ff",
-    color: "#3b82d4",
+    color: "#fff",
     fontWeight: 700,
-    fontSize: "0.8rem",
+    fontSize: "0.85rem",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -285,11 +292,11 @@ const styles = {
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
-  cardSub: { fontSize: "0.72rem", color: "#8c959f" },
+  cardSub: { fontSize: "0.72rem", color: T.inkMuted },
   chips: { display: "flex", flexWrap: "wrap", gap: "0.35rem" },
   chip: {
-    background: "#f0f3f6",
-    color: "#3d4650",
+    background: T.accentBg,
+    color: "#5a44c4",
     borderRadius: 999,
     padding: "0.2rem 0.6rem",
     fontSize: "0.75rem",
@@ -309,7 +316,7 @@ const styles = {
     fontWeight: 700,
     letterSpacing: "0.04em",
     textTransform: "uppercase",
-    color: "#8c959f",
+    color: T.inkMuted,
     marginRight: "0.4rem",
   },
   motList: {
@@ -325,38 +332,55 @@ const styles = {
     gap: "0.75rem",
     fontSize: "0.82rem",
   },
-  relName: { fontWeight: 600, color: "#1f2328", flexShrink: 0 },
-  relNature: { color: "#57606a", textAlign: "right" },
+  relName: { fontWeight: 600, color: T.ink, flexShrink: 0 },
+  relNature: { color: T.inkSoft, textAlign: "right" },
   list: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
     gap: "0.6rem",
   },
   listRow: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 8,
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius,
     padding: "0.6rem 0.85rem",
     display: "flex",
-    flexDirection: "column",
-    gap: "0.1rem",
-    alignItems: "flex-start",
+    alignItems: "center",
+    gap: "0.6rem",
     textAlign: "left",
     width: "100%",
     cursor: "pointer",
     fontFamily: "inherit",
     color: "inherit",
   },
+  listAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: "50%",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: "0.68rem",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  listInfo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.1rem",
+    minWidth: 0,
+  },
   listName: { fontWeight: 600, fontSize: "0.88rem" },
   listTraits: {
     fontSize: "0.75rem",
-    color: "#8c959f",
+    color: T.inkMuted,
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
-  empty: { textAlign: "center", padding: "5rem 1rem", color: "#57606a" },
-  emptyIcon: { fontSize: "2.5rem", color: "#d0d7de", marginBottom: "0.5rem" },
+  empty: { textAlign: "center", padding: "5rem 1rem", color: T.inkSoft },
+  emptyIcon: { fontSize: "2.5rem", color: T.borderStrong, marginBottom: "0.5rem" },
   emptyTitle: { fontWeight: 600, fontSize: "1.05rem", margin: "0 0 0.35rem" },
   emptyHint: { fontSize: "0.9rem", margin: 0 },
 };

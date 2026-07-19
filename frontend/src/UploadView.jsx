@@ -3,6 +3,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { extractTextFromFile } from "./fileText";
+import { T } from "./theme";
 
 const ACCEPTED = {
   "text/plain": ".txt",
@@ -201,7 +202,7 @@ export default function UploadView({ onSubmit }) {
 
           {/* status / error */}
           {progress && status !== "error" && (
-            <p style={{ ...styles.statusMsg, color: "#555" }}>{progress}</p>
+            <p style={{ ...styles.statusMsg, color: T.inkSoft }}>{progress}</p>
           )}
           {errorMsg && <p style={styles.errorMsg}>⚠ {errorMsg}</p>}
 
@@ -254,13 +255,13 @@ function formatSize(bytes) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f7f8fa",
+    background: T.bg,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     padding: "3rem 1rem 4rem",
-    fontFamily: '-apple-system, "Segoe UI", system-ui, sans-serif',
-    color: "#1f2328",
+    fontFamily: T.font,
+    color: T.ink,
     lineHeight: 1.6,
   },
   header: {
@@ -274,18 +275,19 @@ const styles = {
     marginBottom: "0.4rem",
   },
   tagline: {
-    color: "#57606a",
+    color: T.inkSoft,
     fontSize: "1rem",
     margin: 0,
   },
   card: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radiusLg,
     padding: "2rem 2.5rem",
     width: "100%",
     maxWidth: 560,
     boxSizing: "border-box",
+    boxShadow: "0 8px 30px rgba(60,50,90,0.05)",
   },
   cardTitle: {
     margin: "0 0 1.25rem",
@@ -294,24 +296,28 @@ const styles = {
   },
   tabs: {
     display: "flex",
-    borderBottom: "1px solid #e5e7eb",
+    background: "#ecebe4",
+    borderRadius: T.radius,
+    padding: 3,
+    gap: 2,
     marginBottom: "1.5rem",
-    gap: 0,
   },
   tab: {
+    flex: 1,
     background: "none",
     border: "none",
-    borderBottom: "2px solid transparent",
-    padding: "0.5rem 1rem",
+    borderRadius: 8,
+    padding: "0.45rem 1rem",
     cursor: "pointer",
-    fontSize: "0.9rem",
-    color: "#57606a",
-    marginBottom: -1,
+    fontSize: "0.88rem",
+    fontWeight: 600,
+    color: T.inkSoft,
+    fontFamily: "inherit",
   },
   tabActive: {
-    color: "#3b82d4",
-    borderBottomColor: "#3b82d4",
-    fontWeight: 600,
+    background: T.surface,
+    color: T.ink,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
   },
   form: {
     display: "flex",
@@ -327,38 +333,39 @@ const styles = {
   },
   optional: {
     fontWeight: 400,
-    color: "#57606a",
+    color: T.inkSoft,
     fontSize: "0.8rem",
   },
   input: {
-    border: "1px solid #d0d7de",
-    borderRadius: 6,
-    padding: "0.5rem 0.75rem",
+    border: `1px solid ${T.borderStrong}`,
+    borderRadius: T.radius,
+    padding: "0.6rem 0.85rem",
     fontSize: "0.95rem",
     outline: "none",
     fontFamily: "inherit",
+    background: T.surface,
   },
   dropzone: {
-    border: "2px dashed #d0d7de",
-    borderRadius: 10,
+    border: `2px dashed ${T.borderStrong}`,
+    borderRadius: T.radius,
     padding: "2rem 1.5rem",
     cursor: "pointer",
     transition: "border-color 0.15s, background 0.15s",
-    background: "#fafafa",
+    background: T.surfaceAlt,
     textAlign: "center",
   },
   dropzoneDragging: {
-    borderColor: "#3b82d4",
-    background: "#eff6ff",
+    borderColor: T.accent,
+    background: T.accentBg,
   },
   dropzoneHasFile: {
-    borderColor: "#2d7d46",
-    background: "#f0fdf4",
+    borderColor: T.success,
+    background: "#f0faf7",
     textAlign: "left",
     cursor: "default",
   },
   dropPrompt: {
-    color: "#57606a",
+    color: T.inkSoft,
     fontSize: "0.9rem",
     display: "flex",
     flexDirection: "column",
@@ -367,17 +374,17 @@ const styles = {
   },
   dropIcon: {
     fontSize: "1.75rem",
-    color: "#b0bac5",
+    color: T.inkMuted,
   },
   browseLink: {
-    color: "#3b82d4",
-    fontWeight: 500,
+    color: T.accent,
+    fontWeight: 600,
     textDecoration: "underline",
     cursor: "pointer",
   },
   supportedTypes: {
     fontSize: "0.78rem",
-    color: "#8c959f",
+    color: T.inkMuted,
     marginTop: "0.2rem",
   },
   fileInfo: {
@@ -395,7 +402,7 @@ const styles = {
     wordBreak: "break-all",
   },
   fileSize: {
-    color: "#57606a",
+    color: T.inkSoft,
     fontSize: "0.8rem",
   },
   removeBtn: {
@@ -403,39 +410,27 @@ const styles = {
     background: "none",
     border: "none",
     cursor: "pointer",
-    color: "#8c959f",
+    color: T.inkMuted,
     fontSize: "1rem",
     flexShrink: 0,
     padding: "0.25rem",
   },
   textarea: {
-    border: "1px solid #d0d7de",
-    borderRadius: 6,
-    padding: "0.6rem 0.75rem",
+    border: `1px solid ${T.borderStrong}`,
+    borderRadius: T.radius,
+    padding: "0.65rem 0.85rem",
     fontSize: "0.9rem",
     fontFamily: "inherit",
     resize: "vertical",
     outline: "none",
     lineHeight: 1.55,
-    color: "#1f2328",
+    color: T.ink,
+    background: T.surface,
   },
   charCount: {
     fontSize: "0.78rem",
-    color: "#8c959f",
+    color: T.inkMuted,
     alignSelf: "flex-end",
-  },
-  progressBar: {
-    height: 4,
-    background: "#e5e7eb",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    width: "100%",
-    background: "linear-gradient(90deg, #3b82d4 0%, #7c5cd8 50%, #3b82d4 100%)",
-    backgroundSize: "200%",
-    animation: "shimmer 1.4s linear infinite",
   },
   statusMsg: {
     margin: 0,
@@ -444,18 +439,18 @@ const styles = {
   errorMsg: {
     margin: 0,
     fontSize: "0.85rem",
-    color: "#cf222e",
-    background: "#fff0f0",
-    border: "1px solid #ffcdd0",
-    borderRadius: 6,
+    color: T.danger,
+    background: T.dangerBg,
+    border: `1px solid ${T.dangerBorder}`,
+    borderRadius: T.radius,
     padding: "0.5rem 0.75rem",
   },
   submitBtn: {
-    background: "#1f2328",
+    background: T.accent,
     color: "#fff",
     border: "none",
-    borderRadius: 8,
-    padding: "0.7rem 1.25rem",
+    borderRadius: T.radius,
+    padding: "0.7rem 1.4rem",
     fontSize: "0.95rem",
     fontWeight: 600,
     cursor: "pointer",
@@ -464,7 +459,7 @@ const styles = {
     transition: "background 0.15s",
   },
   submitBtnDisabled: {
-    background: "#b0bac5",
+    background: T.accentDisabled,
     cursor: "not-allowed",
   },
   howItWorks: {
@@ -472,7 +467,7 @@ const styles = {
     alignItems: "center",
     gap: "0.75rem",
     marginTop: "2.5rem",
-    color: "#57606a",
+    color: T.inkSoft,
     fontSize: "0.85rem",
     flexWrap: "wrap",
     justifyContent: "center",
@@ -486,8 +481,8 @@ const styles = {
     width: 24,
     height: 24,
     borderRadius: "50%",
-    background: "#e5e7eb",
-    color: "#1f2328",
+    background: T.accentBg,
+    color: T.accent,
     fontSize: "0.75rem",
     fontWeight: 700,
     display: "flex",
@@ -496,7 +491,7 @@ const styles = {
     flexShrink: 0,
   },
   stepArrow: {
-    color: "#d0d7de",
+    color: T.borderStrong,
     fontWeight: 300,
   },
 };

@@ -4,6 +4,7 @@
 // the pipeline is doing rather than reflecting exact server progress.
 
 import { useEffect, useState } from "react";
+import { T } from "./theme";
 
 const STAGES = [
   "Reading your manuscript…",
@@ -96,32 +97,33 @@ const keyframes = `
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f7f8fa",
+    background: T.bg,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: "2rem 1rem",
-    fontFamily: '-apple-system, "Segoe UI", system-ui, sans-serif',
-    color: "#1f2328",
+    fontFamily: T.font,
+    color: T.ink,
     lineHeight: 1.6,
   },
   card: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 14,
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radiusLg,
     padding: "2.5rem",
     width: "100%",
     maxWidth: 480,
     textAlign: "center",
     boxSizing: "border-box",
+    boxShadow: "0 8px 30px rgba(60,50,90,0.05)",
   },
   spinner: {
     width: 44,
     height: 44,
     margin: "0 auto 1.25rem",
     borderRadius: "50%",
-    border: "3px solid #e5e7eb",
-    borderTopColor: "#3b82d4",
+    border: `3px solid ${T.border}`,
+    borderTopColor: T.accent,
     animation: "mc-spin 0.9s linear infinite",
   },
   title: {
@@ -131,7 +133,7 @@ const styles = {
   },
   stageText: {
     margin: "0 0 1.5rem",
-    color: "#3b82d4",
+    color: T.accent,
     fontWeight: 500,
     fontSize: "0.95rem",
     animation: "mc-pulse 1.6s ease-in-out infinite",
@@ -153,7 +155,7 @@ const styles = {
     width: 20,
     height: 20,
     borderRadius: "50%",
-    border: "2px solid #d0d7de",
+    border: `2px solid ${T.borderStrong}`,
     color: "#fff",
     fontSize: "0.7rem",
     display: "flex",
@@ -162,29 +164,29 @@ const styles = {
     flexShrink: 0,
   },
   stepDone: {
-    background: "#2d7d46",
-    borderColor: "#2d7d46",
+    background: T.success,
+    borderColor: T.success,
   },
   stepActive: {
-    borderColor: "#3b82d4",
-    boxShadow: "0 0 0 3px rgba(59,130,212,0.15)",
+    borderColor: T.accent,
+    boxShadow: "0 0 0 3px rgba(106,75,255,0.15)",
   },
   stepLabel: {
     fontSize: "0.85rem",
-    color: "#8c959f",
+    color: T.inkMuted,
   },
   stepLabelActive: {
-    color: "#1f2328",
+    color: T.ink,
   },
   hint: {
     marginTop: "1.75rem",
     marginBottom: 0,
     fontSize: "0.8rem",
-    color: "#8c959f",
+    color: T.inkMuted,
   },
   errorIcon: {
     fontSize: "2rem",
-    color: "#cf222e",
+    color: T.danger,
     marginBottom: "0.5rem",
   },
   errorTitle: {
@@ -193,17 +195,17 @@ const styles = {
     fontWeight: 700,
   },
   errorText: {
-    color: "#57606a",
+    color: T.inkSoft,
     fontSize: "0.9rem",
     margin: "0 0 1.5rem",
     wordBreak: "break-word",
   },
   backBtn: {
-    background: "#1f2328",
+    background: T.accent,
     color: "#fff",
     border: "none",
-    borderRadius: 8,
-    padding: "0.6rem 1.25rem",
+    borderRadius: T.radius,
+    padding: "0.6rem 1.4rem",
     fontSize: "0.9rem",
     fontWeight: 600,
     cursor: "pointer",

@@ -1,10 +1,13 @@
-// ChatView.jsx — minimal single-character chat. Intentionally bare: another
-// agent owns the real chat UI. This just proves the /chat round-trip: the
-// writer types a question, it's sent as a ChatRequest, and the character agent
-// replies in voice. History is the running transcript minus the new message.
+// ChatView.jsx — one-on-one chat with a single character. Styled to match the
+// scene page: warm canvas, purple writer bubbles, a colored character avatar,
+// and a pill composer. The writer types a question, it's sent as a ChatRequest,
+// and the character agent replies in voice. History is the running transcript
+// minus the new message.
 
 import { useEffect, useRef, useState } from "react";
 import { chat } from "./api";
+import { initials, colorFor } from "./avatar";
+import { T } from "./theme";
 
 export default function ChatView({ character, characters = [], title, onBack }) {
   const [messages, setMessages] = useState([]); // [{ speaker_id, text }]
@@ -29,6 +32,8 @@ export default function ChatView({ character, characters = [], title, onBack }) 
       </div>
     );
   }
+
+  const accent = colorFor(character.id);
 
   async function send(e) {
     e?.preventDefault();
@@ -56,6 +61,9 @@ export default function ChatView({ character, characters = [], title, onBack }) 
         <button style={styles.backBtn} onClick={onBack}>
           ← Characters
         </button>
+        <div style={{ ...styles.avatar, background: accent }}>
+          {initials(character.name)}
+        </div>
         <div>
           <div style={styles.name}>{character.name}</div>
           <div style={styles.sub}>{title || "Manuscript"}</div>
@@ -76,6 +84,11 @@ export default function ChatView({ character, characters = [], title, onBack }) 
               key={i}
               style={{ ...styles.row, justifyContent: mine ? "flex-end" : "flex-start" }}
             >
+              {!mine && (
+                <div style={{ ...styles.msgAvatar, background: accent }}>
+                  {initials(idToName[m.speaker_id] || character.name)}
+                </div>
+              )}
               <div style={{ ...styles.bubble, ...(mine ? styles.mine : styles.theirs) }}>
                 {!mine && (
                   <div style={styles.speaker}>
@@ -89,6 +102,9 @@ export default function ChatView({ character, characters = [], title, onBack }) 
         })}
         {loading && (
           <div style={{ ...styles.row, justifyContent: "flex-start" }}>
+            <div style={{ ...styles.msgAvatar, background: accent }}>
+              {initials(character.name)}
+            </div>
             <div style={{ ...styles.bubble, ...styles.theirs, ...styles.typing }}>
               {character.name} is thinking…
             </div>
@@ -106,7 +122,11 @@ export default function ChatView({ character, characters = [], title, onBack }) 
           placeholder={`Message ${character.name}…`}
           disabled={loading}
         />
-        <button style={styles.sendBtn} type="submit" disabled={loading || !input.trim()}>
+        <button
+          style={{ ...styles.sendBtn, ...(loading || !input.trim() ? styles.sendBtnOff : {}) }}
+          type="submit"
+          disabled={loading || !input.trim()}
+        >
           Send
         </button>
       </form>
@@ -119,28 +139,40 @@ const styles = {
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
-    background: "#f7f8fa",
-    fontFamily: '-apple-system, "Segoe UI", system-ui, sans-serif',
-    color: "#1f2328",
+    background: T.bg,
+    fontFamily: T.font,
+    color: T.ink,
   },
   header: {
     display: "flex",
     alignItems: "center",
-    gap: "1rem",
-    padding: "1rem 1.5rem",
-    background: "#fff",
-    borderBottom: "1px solid #e5e7eb",
+    gap: "0.9rem",
+    padding: "0.9rem 1.5rem",
+    background: T.surface,
+    borderBottom: `1px solid ${T.border}`,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+    fontSize: "0.85rem",
+    fontWeight: 700,
+    flexShrink: 0,
   },
   name: { fontWeight: 700, fontSize: "1.05rem" },
-  sub: { fontSize: "0.78rem", color: "#8c959f" },
+  sub: { fontSize: "0.78rem", color: T.inkMuted },
   backBtn: {
     background: "none",
-    border: "1px solid #d0d7de",
-    borderRadius: 8,
+    border: `1px solid ${T.borderStrong}`,
+    borderRadius: T.radius,
     padding: "0.45rem 0.9rem",
     fontSize: "0.85rem",
     cursor: "pointer",
-    color: "#57606a",
+    color: T.inkSoft,
     fontFamily: "inherit",
   },
   thread: {
@@ -155,37 +187,50 @@ const styles = {
     flexDirection: "column",
     gap: "0.75rem",
   },
-  empty: { color: "#8c959f", fontSize: "0.9rem", textAlign: "center", marginTop: "2rem" },
-  row: { display: "flex" },
+  empty: { color: T.inkMuted, fontSize: "0.9rem", textAlign: "center", marginTop: "2rem" },
+  row: { display: "flex", alignItems: "flex-end", gap: "0.5rem" },
+  msgAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+    fontSize: "0.62rem",
+    fontWeight: 700,
+    flexShrink: 0,
+  },
   bubble: {
     maxWidth: "80%",
     padding: "0.7rem 0.95rem",
-    borderRadius: 14,
+    borderRadius: 16,
     fontSize: "0.92rem",
     lineHeight: 1.5,
     whiteSpace: "pre-wrap",
   },
-  mine: { background: "#3b82d4", color: "#fff", borderBottomRightRadius: 4 },
+  mine: { background: T.accent, color: "#fff", borderBottomRightRadius: 4 },
   theirs: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    color: "#1f2328",
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    color: T.ink,
     borderBottomLeftRadius: 4,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
   },
   speaker: {
     fontSize: "0.72rem",
     fontWeight: 700,
-    color: "#8c959f",
+    color: T.inkMuted,
     marginBottom: "0.25rem",
   },
-  typing: { color: "#8c959f", fontStyle: "italic" },
-  error: { color: "#cf222e", fontSize: "0.85rem", textAlign: "center" },
+  typing: { color: T.inkMuted, fontStyle: "italic" },
+  error: { color: T.danger, fontSize: "0.85rem", textAlign: "center" },
   composer: {
     display: "flex",
     gap: "0.6rem",
     padding: "1rem 1.5rem",
-    background: "#fff",
-    borderTop: "1px solid #e5e7eb",
+    background: T.surface,
+    borderTop: `1px solid ${T.border}`,
     maxWidth: 720,
     width: "100%",
     margin: "0 auto",
@@ -193,22 +238,23 @@ const styles = {
   },
   input: {
     flex: 1,
-    padding: "0.7rem 0.9rem",
-    borderRadius: 10,
-    border: "1px solid #d0d7de",
+    padding: "0.75rem 1rem",
+    borderRadius: T.radiusPill,
+    border: `1px solid ${T.borderStrong}`,
     fontSize: "0.92rem",
     fontFamily: "inherit",
     outline: "none",
   },
   sendBtn: {
-    background: "#1f2328",
+    background: T.accent,
     color: "#fff",
     border: "none",
-    borderRadius: 10,
-    padding: "0.7rem 1.25rem",
+    borderRadius: T.radiusPill,
+    padding: "0.7rem 1.5rem",
     fontSize: "0.9rem",
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
   },
+  sendBtnOff: { background: T.accentDisabled, cursor: "not-allowed" },
 };

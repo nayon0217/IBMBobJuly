@@ -57,7 +57,6 @@ Request:
 {
   "character_ids": ["elizabeth-bennet", "fitzwilliam-darcy"],
   "situation": "They are trapped by rain in a parlour.",
-  "twist": "A letter arrives mid-conversation.",
   "max_turns": 6
 }
 ```

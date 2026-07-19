@@ -24,9 +24,26 @@ export const extract = (manuscriptText, title) =>
   post("/extract", { manuscript_text: manuscriptText, title });
 
 // ChatRequest -> ChatResponse
-export const chat = (characterId, message, history = []) =>
-  post("/chat", { character_id: characterId, message, history });
+export const chat = (characterId, message, history = [], knowledgeUpToChunk = null) =>
+  post("/chat", {
+    character_id: characterId,
+    message,
+    history,
+    ...(knowledgeUpToChunk != null ? { knowledge_up_to_chunk: knowledgeUpToChunk } : {}),
+  });
 
 // SceneRequest -> SceneResponse
-export const runScene = (characterIds, situation, twist) =>
-  post("/scene", { character_ids: characterIds, situation, twist });
+// opts is optional: { twist, maxTurns, knowledgeUpToChunk }. The timeline the
+// writer picks in setup rides along as knowledge_up_to_chunk so the backend can
+// keep the scene spoiler-safe (mirrors /chat); extra fields are ignored until
+// the backend adopts them.
+export const runScene = (characterIds, situation, opts = {}) =>
+  post("/scene", {
+    character_ids: characterIds,
+    situation,
+    twist: opts.twist ?? null,
+    ...(opts.maxTurns != null ? { max_turns: opts.maxTurns } : {}),
+    ...(opts.knowledgeUpToChunk != null
+      ? { knowledge_up_to_chunk: opts.knowledgeUpToChunk }
+      : {}),
+  });
