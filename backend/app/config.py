@@ -6,8 +6,14 @@ Person B can develop the whole UI with BACKEND=mock.
 """
 
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 from app.schemas import Backend
+
+# Repo-root .env (backend/app/config.py -> repo root is two levels up from backend/)
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 class Settings:
@@ -18,6 +24,13 @@ class Settings:
     watsonx_project_id: str = os.getenv("WATSONX_PROJECT_ID", "")
     watsonx_url: str = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com")
     granite_model: str = os.getenv("GRANITE_MODEL", "ibm/granite-3-8b-instruct")
+
+    # Pinecone vector DB — the retrieval store when backend == watsonx
+    pinecone_api_key: str = os.getenv("PINECONE_API_KEY", "")
+    pinecone_index: str = os.getenv("PINECONE_INDEX", "manuscript-characters")
+    pinecone_cloud: str = os.getenv("PINECONE_CLOUD", "aws")
+    pinecone_region: str = os.getenv("PINECONE_REGION", "us-east-1")
+    pinecone_namespace: str = os.getenv("PINECONE_NAMESPACE", "default")
 
 
 settings = Settings()

@@ -34,6 +34,11 @@ class PersonaCard(BaseModel):
     key_scene_ids: list[str] = Field(
         default_factory=list, description="Manuscript chunk ids where they appear"
     )
+    first_appearance_chunk: Optional[int] = Field(
+        None,
+        description="Index of the first chunk this character appears in; used "
+        "to default the timeline. None if never matched by name.",
+    )
 
 
 class ChatTurn(BaseModel):

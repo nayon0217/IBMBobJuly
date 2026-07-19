@@ -5,10 +5,9 @@
 
 import { useState } from "react";
 
-export default function WorkspaceView({ result, title, onReset }) {
+export default function WorkspaceView({ result, title, wordCount = 0, onReset }) {
   const characters = result?.characters ?? [];
   const chunkCount = result?.chunk_count ?? 0;
-  const wordCount = result?.word_count ?? 0;
 
   // Activated characters: default top-5 by appearance, or all if ≤ 5
   const [activated, setActivated] = useState(() => {

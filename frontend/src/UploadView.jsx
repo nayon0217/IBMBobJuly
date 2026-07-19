@@ -2,7 +2,7 @@
 // (.txt, .pdf, .docx) or paste-text, then triggers extraction.
 
 import { useState, useRef, useCallback } from "react";
-import { extract } from "./api";
+import { extractTextFromFile } from "./fileText";
 
 const ACCEPTED = {
   "text/plain": ".txt",
@@ -13,22 +13,13 @@ const ACCEPTED = {
 
 const ACCEPT_STRING = Object.values(ACCEPTED).join(",");
 
-function readFileAsText(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
-    reader.onerror = () => reject(new Error("Could not read file."));
-    reader.readAsText(file);
-  });
-}
-
-export default function UploadView({ onExtracted }) {
+export default function UploadView({ onSubmit }) {
   const [mode, setMode] = useState("file"); // "file" | "paste"
   const [dragging, setDragging] = useState(false);
   const [file, setFile] = useState(null);
   const [pasteText, setPasteText] = useState("");
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState(null); // null | "reading" | "extracting" | "done" | "error"
+  const [status, setStatus] = useState(null); // null | "reading" | "error"
   const [errorMsg, setErrorMsg] = useState("");
   const [progress, setProgress] = useState(""); // human-readable status line
 
@@ -37,7 +28,6 @@ export default function UploadView({ onExtracted }) {
   const isFileMode = mode === "file";
   const canSubmit =
     status !== "reading" &&
-    status !== "extracting" &&
     (isFileMode ? file !== null : pasteText.trim().length > 20);
 
   // ── drag-and-drop ──────────────────────────────────────────────────────
@@ -62,6 +52,8 @@ export default function UploadView({ onExtracted }) {
   }
 
   // ── submit ─────────────────────────────────────────────────────────────
+  // We only read the file to text here; the actual extraction (and its loading
+  // screen) is owned by App, which swaps to ProcessingView on hand-off.
   async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
@@ -72,7 +64,7 @@ export default function UploadView({ onExtracted }) {
       let text = "";
       if (isFileMode) {
         if (!file) return;
-        text = await readFileAsText(file);
+        text = await extractTextFromFile(file, setProgress);
       } else {
         text = pasteText.trim();
       }
@@ -81,16 +73,10 @@ export default function UploadView({ onExtracted }) {
         throw new Error("The manuscript seems too short. Please provide more text.");
       }
 
-      const manuscriptTitle = title.trim() || (isFileMode ? file.name : "Untitled Manuscript");
+      const manuscriptTitle =
+        title.trim() || (isFileMode ? file.name : "Untitled Manuscript");
 
-      setStatus("extracting");
-      setProgress("Sending to server for character extraction… this may take a minute.");
-
-      const result = await extract(text, manuscriptTitle);
-
-      setStatus("done");
-      setProgress(`Done — ${result.characters?.length ?? 0} characters found.`);
-      onExtracted(result, manuscriptTitle, text);
+      onSubmit(text, manuscriptTitle);
     } catch (err) {
       setStatus("error");
       setErrorMsg(err.message || "Something went wrong.");
@@ -214,15 +200,8 @@ export default function UploadView({ onExtracted }) {
           )}
 
           {/* status / error */}
-          {status === "extracting" && (
-            <div style={styles.progressBar}>
-              <div style={styles.progressFill} />
-            </div>
-          )}
           {progress && status !== "error" && (
-            <p style={{ ...styles.statusMsg, color: status === "done" ? "#2d7d46" : "#555" }}>
-              {progress}
-            </p>
+            <p style={{ ...styles.statusMsg, color: "#555" }}>{progress}</p>
           )}
           {errorMsg && <p style={styles.errorMsg}>⚠ {errorMsg}</p>}
 
@@ -232,11 +211,7 @@ export default function UploadView({ onExtracted }) {
             style={{ ...styles.submitBtn, ...(canSubmit ? {} : styles.submitBtnDisabled) }}
             disabled={!canSubmit}
           >
-            {status === "reading"
-              ? "Reading…"
-              : status === "extracting"
-              ? "Extracting characters…"
-              : "Process manuscript →"}
+            {status === "reading" ? "Reading…" : "Process manuscript →"}
           </button>
         </form>
       </div>
