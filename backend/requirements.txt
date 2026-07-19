@@ -8,6 +8,7 @@ pytest>=8.0
 # chromadb>=0.5        # or pymilvus, whichever vector store you pick
 langchain
 langchain-ibm
+anthropic>=0.40
 pinecone>=9,<10
 fastapi
 uvicorn

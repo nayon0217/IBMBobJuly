@@ -109,6 +109,7 @@ class SceneResponse(BaseModel):
 class Backend(str, Enum):
     MOCK = "mock"
     WATSONX = "watsonx"
+    CLAUDE = "claude"
 
 
 class HealthResponse(BaseModel):

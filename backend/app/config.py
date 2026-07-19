@@ -25,6 +25,12 @@ class Settings:
     watsonx_url: str = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com")
     granite_model: str = os.getenv("GRANITE_MODEL", "ibm/granite-3-8b-instruct")
 
+    # Anthropic Claude — only needed when backend == claude. Claude runs the
+    # LLM stages (discovery / consolidation / grounding); it has no embeddings
+    # API, so the claude backend embeds locally (see services/claude.py).
+    claude_api_key: str = os.getenv("CLAUDE_API_KEY", "")
+    claude_model: str = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-5-20250929")
+
     # Pinecone vector DB — the retrieval store when backend == watsonx
     pinecone_api_key: str = os.getenv("PINECONE_API_KEY", "")
     pinecone_index: str = os.getenv("PINECONE_INDEX", "manuscript-characters")

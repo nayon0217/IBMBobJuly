@@ -56,21 +56,25 @@ def extract(
     if settings.backend == Backend.MOCK:
         return ExtractResponse(characters=SAMPLE_CHARACTERS, chunk_count=len(chunks))
 
-    # --- watsonx path ---------------------------------------------------------
-    from app.services import watsonx
+    # --- real path (watsonx or claude) ---------------------------------------
+    # The provider swaps the LLM/embeddings vendor without touching the staged
+    # pipeline below; the vector store (Pinecone vs in-memory) follows backend.
+    from app.services import providers
+
+    provider = providers.get_provider()
 
     # Embed + persist chunks first so the grounding stage can retrieve them.
     if progress:
         progress("Embedding manuscript and building the vector index…")
-    vectors = watsonx.embed(chunks)
+    vectors = provider.embed(chunks)
     vector_store = store.get_vector_store()
     vector_store.save_manuscript(chunks, vectors)
 
     characters = persona_pipeline.extract_characters(
         chunks,
         vector_store,
-        generate=watsonx.generate,
-        embed=watsonx.embed,
+        generate=provider.generate,
+        embed=provider.embed,
         progress=progress,
     )
 

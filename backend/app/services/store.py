@@ -99,7 +99,8 @@ _vector_store: VectorStore | None = None
 
 def get_vector_store() -> VectorStore:
     """Return the process-wide vector store. Pinecone is mandatory when
-    BACKEND=watsonx (fails loudly if unconfigured); in-memory otherwise."""
+    BACKEND=watsonx (fails loudly if unconfigured); in-memory otherwise
+    (mock, tests, and claude — which embeds locally, see services/claude.py)."""
     global _vector_store
     if _vector_store is None:
         if settings.backend == Backend.WATSONX:
