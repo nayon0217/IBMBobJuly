@@ -112,6 +112,13 @@ export default function ResultsView({
 
 function PersonaCard({ c, idToName, onOpenChat }) {
   const relationships = Object.entries(c.relationships || {});
+  const sub = [
+    c.gender,
+    typeof c.first_appearance_chunk === "number" &&
+      `first appears in chunk ${c.first_appearance_chunk}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <article
       style={{ ...styles.card, ...(onOpenChat ? styles.cardClickable : {}) }}
@@ -125,11 +132,7 @@ function PersonaCard({ c, idToName, onOpenChat }) {
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={styles.cardName}>{c.name}</div>
-          {typeof c.first_appearance_chunk === "number" && (
-            <div style={styles.cardSub}>
-              first appears in chunk {c.first_appearance_chunk}
-            </div>
-          )}
+          {sub && <div style={styles.cardSub}>{sub}</div>}
         </div>
       </div>
 

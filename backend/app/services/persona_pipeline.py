@@ -30,6 +30,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from app.schemas import PersonaCard
+from app.services.gender import infer_gender, normalize_gender
 from app.services.jsonutil import generate_json
 from app.services.store import VectorStore
 
@@ -93,7 +94,7 @@ Other characters in this story — use THESE EXACT IDS as relationship keys, and
 {roster}
 
 Return ONLY valid JSON, no other text:
-{{"traits": ["adjective", ...], "motivations": ["what they want", ...], "voice": "how they speak: register, tics, sentence style", "physical": "appearance grounded in the text: build, age, hair, clothing, distinctive features", "relationships": {{"character-id": "nature of the relationship"}}}}
+{{"traits": ["adjective", ...], "motivations": ["what they want", ...], "voice": "how they speak: register, tics, sentence style", "physical": "appearance grounded in the text: build, age, hair, clothing, distinctive features", "gender": "male, female, or nonbinary — only as the text establishes it, else unknown", "relationships": {{"character-id": "nature of the relationship"}}}}
 
 PASSAGES:
 {passages}"""
@@ -287,6 +288,12 @@ def _build_cards(
             logger.warning("Persona generation failed for %s: %s", name, exc)
             data = {}
 
+        # Gender rides the same grounding call; if the model didn't settle it,
+        # fall back to the deterministic honorific/pronoun scan (no extra call).
+        gender = normalize_gender(data.get("gender")) or infer_gender(
+            entry["aliases"], chunks
+        )
+
         return PersonaCard(
             id=entry["id"],
             name=name,
@@ -294,6 +301,7 @@ def _build_cards(
             motivations=data.get("motivations") or [],
             voice=data.get("voice") or "",
             physical=_clean_physical(data.get("physical")),
+            gender=gender,
             relationships=_normalize_relationships(
                 data.get("relationships"), alias_to_id, id_to_name, entry["id"]
             ),

@@ -20,6 +20,7 @@ SAMPLE_CHARACTERS: list[PersonaCard] = [
         voice="Sharp, ironic, fond of a well-placed barb. Speaks in full, "
         "balanced sentences.",
         physical="Slight, dark-haired, with fine eyes often lit by mischief.",
+        gender="female",
         relationships={"fitzwilliam-darcy": "wary attraction, sparring partner"},
         key_scene_ids=["chunk-3", "chunk-11"],
     ),
@@ -30,6 +31,7 @@ SAMPLE_CHARACTERS: list[PersonaCard] = [
         motivations=["preserve family honour", "resist an unsuitable attachment"],
         voice="Formal, clipped, reveals feeling only under pressure.",
         physical="Tall, handsome, with a proud, imposing bearing.",
+        gender="male",
         relationships={"elizabeth-bennet": "reluctant admiration turning to love"},
         key_scene_ids=["chunk-3", "chunk-14"],
     ),

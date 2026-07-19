@@ -1,12 +1,15 @@
 // SceneView.jsx — the scene stage. The characters chosen in SceneSetupView are
-// dropped onto a shared stage; the writer talks to all of them from a single
-// input at the bottom and watches each one respond in character, their latest
-// line floating above them as a speech bubble. (The sample UI has a timeline
-// slider here — intentionally omitted; the timeline is chosen during setup.)
+// dropped onto a shared stage. The writer describes an imaginary scene in the
+// box at the bottom; that description is sent to POST /scene as `situation`,
+// and each character's line from the returned dialogue floats above them as a
+// speech bubble. (The sample UI has a timeline slider here — intentionally
+// omitted; the timeline is chosen during setup.)
 
 import { useMemo, useState } from "react";
 import { initials, colorFor } from "./avatar";
 import { runScene, chat } from "./api";
+
+const MAX_TURNS = 6;
 
 export default function SceneView({
   characters = [],
@@ -23,60 +26,44 @@ export default function SceneView({
 
   // Latest spoken line per character id -> text.
   const [bubbles, setBubbles] = useState({});
-  const [input, setInput] = useState("");
+  // Seed the composer with the situation the writer sketched during setup.
+  const [input, setInput] = useState(situation);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  // Running record of what's been said, folded into the situation we send.
-  const [transcript, setTranscript] = useState(situation ? [situation] : []);
+  const [played, setPlayed] = useState(false);
 
-  async function ask(e) {
+  async function playScene(e) {
     e?.preventDefault();
-    const message = input.trim();
-    if (!message || loading) return;
+    const description = input.trim();
+    if (!description || loading) return;
 
-    setInput("");
     setError("");
     setLoading(true);
-
-    // The scene context is the setup situation plus everything asked so far,
-    // then the writer's new line. Backend wiring can refine this later.
-    const context = [...transcript, `The writer says: "${message}"`].join("\n");
+    setBubbles({});
 
     try {
-      if (cast.length <= 1) {
-        // A one-character "scene" is really a chat — use the chat endpoint.
+      if (cast.length < 2) {
+        // /scene requires two+ characters; a solo "scene" is really a chat.
         const only = cast[0];
-        const res = await chat(only.id, message, [], knowledgeUpToChunk);
+        const res = await chat(only.id, description, [], knowledgeUpToChunk);
         setBubbles({ [only.id]: res.reply.text });
-        setTranscript((t) => [...t, `The writer says: "${message}"`, res.reply.text]);
       } else {
-        const res = await runScene(cast.map((c) => c.id), context, {
-          knowledgeUpToChunk,
+        // POST /scene with { character_ids, situation, max_turns }.
+        const res = await runScene(cast.map((c) => c.id), description, {
+          maxTurns: MAX_TURNS,
         });
-        const dialogue = res.dialogue ?? [];
-        // Show each character's most recent line from the exchange.
         const latest = {};
-        for (const turn of dialogue) {
+        for (const turn of res.dialogue ?? []) {
           if (turn.speaker_id !== "writer") latest[turn.speaker_id] = turn.text;
         }
         setBubbles(latest);
-        setTranscript((t) => [
-          ...t,
-          `The writer says: "${message}"`,
-          ...dialogue
-            .filter((d) => d.speaker_id !== "writer")
-            .map((d) => `${idToName(d.speaker_id)}: ${d.text}`),
-        ]);
       }
+      setPlayed(true);
     } catch (err) {
-      setError(err.message || "The scene could not continue.");
+      setError(err.message || "The scene could not be generated.");
     } finally {
       setLoading(false);
     }
-  }
-
-  function idToName(id) {
-    return characters.find((c) => c.id === id)?.name || id;
   }
 
   return (
@@ -108,8 +95,14 @@ export default function SceneView({
       <main style={styles.stageWrap}>
         <div style={styles.stage}>
           <div style={styles.stageLabel}>
-            {loading ? "Scene in progress…" : "Scene"}
+            {loading ? "Scene in progress…" : played ? "Scene" : "Set the scene"}
           </div>
+
+          {!played && !loading && cast.length > 0 && (
+            <p style={styles.stageHint}>
+              Describe an imaginary scene below and press Play to watch it unfold.
+            </p>
+          )}
 
           <div style={styles.actors}>
             {cast.length === 0 && (
@@ -119,12 +112,10 @@ export default function SceneView({
               <div key={c.id} style={styles.actor}>
                 {bubbles[c.id] ? (
                   <div style={styles.bubble}>{bubbles[c.id]}</div>
-                ) : (
-                  <div style={{ ...styles.bubble, ...styles.bubbleGhost }}>
-                    {loading ? "…" : "waiting"}
-                  </div>
-                )}
-                <div style={styles.bubbleTail} />
+                ) : loading ? (
+                  <div style={{ ...styles.bubble, ...styles.bubbleGhost }}>…</div>
+                ) : null}
+                {(bubbles[c.id] || loading) && <div style={styles.bubbleTail} />}
                 <div
                   style={{
                     ...styles.actorAvatar,
@@ -142,12 +133,12 @@ export default function SceneView({
       </main>
 
       {/* ── composer ── */}
-      <form style={styles.composer} onSubmit={ask}>
+      <form style={styles.composer} onSubmit={playScene}>
         <input
           style={styles.input}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder='Ask something… e.g. "What would you do if the letter never arrived?"'
+          placeholder='Describe an imaginary scene… e.g. "They are trapped by rain in a parlour."'
           disabled={loading}
         />
         <button
@@ -155,7 +146,7 @@ export default function SceneView({
           style={{ ...styles.askBtn, ...(loading || !input.trim() ? styles.askBtnOff : {}) }}
           disabled={loading || !input.trim()}
         >
-          {loading ? "…" : "Ask"}
+          {loading ? "…" : played ? "Replay" : "Play"}
         </button>
       </form>
     </div>
@@ -244,6 +235,18 @@ const styles = {
     flexWrap: "wrap",
   },
   emptyStage: { color: "rgba(255,255,255,0.7)", fontSize: "0.9rem" },
+  stageHint: {
+    position: "absolute",
+    top: "50%",
+    left: 0,
+    right: 0,
+    transform: "translateY(-50%)",
+    textAlign: "center",
+    color: "rgba(255,255,255,0.55)",
+    fontSize: "0.9rem",
+    padding: "0 2rem",
+    margin: 0,
+  },
   actor: {
     display: "flex",
     flexDirection: "column",

@@ -14,11 +14,15 @@ the backbone of the timeline / knowledge_up_to_chunk feature, and the same
 ids appear in PersonaCard.key_scene_ids and ChatResponse.grounded_in.
 """
 
+import logging
 import math
 from typing import Protocol, runtime_checkable
 
 from app.config import Backend, settings
 from app.schemas import PersonaCard
+from app.services.gender import infer_gender
+
+logger = logging.getLogger(__name__)
 
 
 # --- vector store -------------------------------------------------------------
@@ -126,6 +130,30 @@ _characters: list[PersonaCard] = []
 def save_characters(characters: list[PersonaCard]) -> None:
     global _characters
     _characters = list(characters)
+    _backfill_genders(_characters)
+
+
+def _backfill_genders(characters: list[PersonaCard]) -> None:
+    """Cards produced before the gender field existed arrive with it empty.
+    Their key_scene_ids point at chunks we already store, so gender is settled
+    by the deterministic honorific/pronoun scan over that text — no API calls,
+    and previous runs pick the field up the moment they're (re)saved."""
+    pending = [c for c in characters if not c.gender and c.key_scene_ids]
+    if not pending:
+        return
+    vector_store = get_vector_store()
+    for card in pending:
+        try:
+            texts = [
+                text
+                for text in (vector_store.get_chunk(cid) for cid in card.key_scene_ids)
+                if text
+            ]
+        except Exception as exc:  # backfill is best-effort, never fatal
+            logger.warning("Gender backfill retrieval failed for %s: %s", card.id, exc)
+            continue
+        if texts:
+            card.gender = infer_gender([card.name], texts)
 
 
 def get_characters() -> list[PersonaCard]:

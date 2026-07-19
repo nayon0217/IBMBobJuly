@@ -52,6 +52,8 @@ PERSONAS = {
         "motivations": ["find where he belongs"],
         "voice": "Plain, earnest.",
         "physical": "A skinny boy with a lightning-shaped scar on his forehead.",
+        # gender rides the same grounding call as everything else
+        "gender": "male",
         "relationships": {"vernon-dursley": "resented guardian"},
     },
     "Vernon Dursley": {
@@ -60,6 +62,9 @@ PERSONAS = {
         "voice": "Blustering, loud.",
         # physical "unknown" must normalize to an empty string
         "physical": "unknown",
+        # model didn't settle gender — the deterministic honorific/pronoun
+        # fallback must, without any extra call
+        "gender": "unknown",
         # keyed by display name on purpose — normalization must remap it to id
         "relationships": {"Harry Potter": "unwanted nephew"},
     },
@@ -107,6 +112,11 @@ def test_staged_extraction(fake_watsonx):
     assert "lightning-shaped scar" in harry.physical
     # a model "unknown" is normalized to empty so the UI can hide the field
     assert by_id["vernon-dursley"].physical == ""
+    # gender flows through the same grounding call (no extra call)...
+    assert harry.gender == "male"
+    # ...and when the model punts ("unknown"), the deterministic
+    # honorific/pronoun scan settles it from the text itself
+    assert by_id["vernon-dursley"].gender == "male"
     # relationships resolve to valid ids (even when the model keyed by name)
     assert harry.relationships == {"vernon-dursley": "resented guardian"}
     assert by_id["vernon-dursley"].relationships == {"harry-potter": "unwanted nephew"}

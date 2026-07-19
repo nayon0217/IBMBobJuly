@@ -82,7 +82,13 @@ Response:
   "traits": ["witty", "independent"],
   "motivations": ["marry for love"],
   "voice": "Sharp, ironic, full sentences.",
+  "gender": "female",
   "relationships": { "fitzwilliam-darcy": "wary attraction" },
   "key_scene_ids": ["chunk-3", "chunk-11"]
 }
 ```
+`gender` is `"male"`, `"female"`, `"nonbinary"`, or `""` when the text never
+settles it. It costs no extra API calls: the extraction pipeline asks for it
+inside the existing persona grounding call and otherwise infers it
+deterministically from honorifics and nearby pronouns — the same inference
+backfills cards from runs that predate the field.

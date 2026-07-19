@@ -32,6 +32,13 @@ class PersonaCard(BaseModel):
         description="Physical appearance grounded in the text: build, age, "
         "hair, distinctive features. Empty when the manuscript never describes it.",
     )
+    gender: str = Field(
+        "",
+        description="'male', 'female', or 'nonbinary'; empty when the text "
+        "never settles it. Rides the existing grounding call and a "
+        "deterministic honorific/pronoun scan — never a separate API call — "
+        "so cards from runs that predate the field can be backfilled.",
+    )
     relationships: dict[str, str] = Field(
         default_factory=dict,
         description="Maps another character id -> nature of the relationship",
