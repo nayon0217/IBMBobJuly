@@ -8,6 +8,26 @@ from app.config import Backend, settings
 from app.mock_data import SAMPLE_CHARACTERS
 from app.schemas import ExtractRequest, ExtractResponse, PersonaCard
 
+import json
+from app.services.watsonx import generate
+
+SEGMENT_PROMPT = """You are analyzing a chapter from a novel. Split it into scenes.
+A new scene begins when the location changes, time jumps, or the set of present characters changes substantially.
+
+Return ONLY valid JSON, no other text, in this format:
+{{"scenes": [{{"start_quote": "first 8 words of the scene", "summary": "one line", "characters_present": ["name1", "name2"], "location": "where"}}]}}
+
+CHAPTER TEXT:
+{chapter_text}"""
+
+def segment_scenes(chapter_text: str, chapter_num: int) -> list[dict]:
+    raw = generate(SEGMENT_PROMPT.format(chapter_text=chapter_text), max_tokens=2000)
+    data = json.loads(raw)          # will crash on bad JSON — that's fine for v1
+    scenes = data["scenes"]
+    # locate each scene's start in the text via start_quote, slice the chapter
+    # into scene texts, attach chapter_num + running seq
+    ...
+    return scenes
 
 def _chunk(text: str, size: int = 1200) -> list[str]:
     """Naive fixed-size chunking. Good enough to start; Person A can swap for
