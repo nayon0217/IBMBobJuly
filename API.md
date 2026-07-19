@@ -82,6 +82,7 @@ Response:
   "traits": ["witty", "independent"],
   "motivations": ["marry for love"],
   "voice": "Sharp, ironic, full sentences.",
+  "physical": "Tall, 17 years old, blonde hair",
   "relationships": { "fitzwilliam-darcy": "wary attraction" },
   "key_scene_ids": ["chunk-3", "chunk-11"]
 }
