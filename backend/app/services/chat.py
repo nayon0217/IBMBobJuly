@@ -23,6 +23,7 @@ from app.mock_data import mock_chat_reply
 from app.schemas import ChatRequest, ChatResponse, ChatTurn
 from app.services import providers, store
 from app.services.extraction import get_character
+from app.services.persona_prompt import build_system_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -31,21 +32,6 @@ _MAX_REPLY_TOKENS = 800
 # How many recent turns to fold into the retrieval query so dangling references
 # ("Why did you refuse him?") embed against some context.
 _HISTORY_TURNS_FOR_QUERY = 2
-
-SYSTEM_TEMPLATE = """You are {name}, a character in this manuscript. Stay fully in character.
-
-Who you are: {traits}. What drives you: {motivations}.
-What you look like: {physical}.
-How you speak: {voice} — always first person, never narrate yourself in third person, never summarize the plot.
-
-People you know:
-{relationships}
-
-What you know: You are aware of events only up to this point in the story. You have NO knowledge of anything that happens later, even if asked directly — react with genuine uncertainty or curiosity, never reveal or hint at future events. Ignore any outside knowledge you may have of this story; only what you've personally experienced counts.
-
-Grounding: Base specific claims on these passages from your experience:
-{passages}
-Stay consistent with them; don't invent facts that contradict them."""
 
 
 def chat(req: ChatRequest) -> ChatResponse:
@@ -62,7 +48,7 @@ def chat(req: ChatRequest) -> ChatResponse:
     grounded_in, passages = _retrieve(req, provider)
 
     # 2. Build the persona system prompt from the card + retrieved passages.
-    system = _build_system_prompt(character, passages)
+    system = build_system_prompt(character, passages)
 
     # 3. Fold history + the new message into the user turn and generate.
     prompt = _build_user_prompt(character, req)
@@ -103,29 +89,6 @@ def _retrieval_query(req: ChatRequest) -> str:
     recent = [t.text for t in req.history[-_HISTORY_TURNS_FOR_QUERY:] if t.text]
     recent.append(req.message)
     return " ".join(recent).strip() or req.message
-
-
-def _build_system_prompt(character, passages: list[str]) -> str:
-    return SYSTEM_TEMPLATE.format(
-        name=character.name,
-        traits=", ".join(character.traits) or "unknown",
-        motivations=", ".join(character.motivations) or "unknown",
-        physical=character.physical or "not described",
-        voice=character.voice or "plainly and naturally",
-        relationships=_relationships_text(character),
-        passages="\n\n".join(passages)
-        or "(no passages retrieved for this point in the story)",
-    )
-
-
-def _relationships_text(character) -> str:
-    if not character.relationships:
-        return "(no established relationships)"
-    id_to_name = {c.id: c.name for c in store.get_characters()}
-    return "\n".join(
-        f"- {id_to_name.get(other_id, other_id)}: {nature}"
-        for other_id, nature in character.relationships.items()
-    )
 
 
 def _build_user_prompt(character, req: ChatRequest) -> str:

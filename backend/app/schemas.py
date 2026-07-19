@@ -95,16 +95,19 @@ class ChatResponse(BaseModel):
 
 
 class SceneRequest(BaseModel):
-    character_ids: list[str] = Field(..., min_length=2)
+    # One character is a soliloquy; two+ is a conversation. Either is valid.
+    character_ids: list[str] = Field(..., min_length=1)
     situation: str = Field(..., description="The setup the writer drops them into")
     twist: Optional[str] = Field(None, description="Optional mid-scene curveball")
-    max_turns: int = Field(6, ge=2, le=20)
+    max_turns: int = Field(6, ge=1, le=20)
 
 
 class PlotSuggestion(BaseModel):
-    summary: str = Field(..., description="What emerged, in one or two sentences")
-    what_happens_next: list[str] = Field(
-        default_factory=list, description="Concrete directions the writer could take"
+    summary: str = Field(..., description="Third-person recap of what happened")
+    character_feelings: list[str] = Field(
+        default_factory=list,
+        description="How each character feels after the scene, in voice; aligned "
+        "index-for-index with SceneRequest.character_ids.",
     )
 
 

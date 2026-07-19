@@ -7,7 +7,7 @@
 
 import { useMemo, useState } from "react";
 import { initials, colorFor } from "./avatar";
-import { runScene, chat } from "./api";
+import { runScene } from "./api";
 
 const MAX_TURNS = 6;
 
@@ -16,7 +16,6 @@ export default function SceneView({
   characterIds = [],
   title,
   situation = "",
-  knowledgeUpToChunk = null,
   onBack,
 }) {
   const cast = useMemo(
@@ -31,33 +30,30 @@ export default function SceneView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [played, setPlayed] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
 
   async function playScene(e) {
     e?.preventDefault();
     const description = input.trim();
-    if (!description || loading) return;
+    if (!description || loading || cast.length === 0) return;
 
     setError("");
     setLoading(true);
     setBubbles({});
+    setSuggestion(null);
 
     try {
-      if (cast.length < 2) {
-        // /scene requires two+ characters; a solo "scene" is really a chat.
-        const only = cast[0];
-        const res = await chat(only.id, description, [], knowledgeUpToChunk);
-        setBubbles({ [only.id]: res.reply.text });
-      } else {
-        // POST /scene with { character_ids, situation, max_turns }.
-        const res = await runScene(cast.map((c) => c.id), description, {
-          maxTurns: MAX_TURNS,
-        });
-        const latest = {};
-        for (const turn of res.dialogue ?? []) {
-          if (turn.speaker_id !== "writer") latest[turn.speaker_id] = turn.text;
-        }
-        setBubbles(latest);
+      // POST /scene with { character_ids, situation, max_turns } — one or more
+      // characters; the backend runs the round-robin + name-callout scene.
+      const res = await runScene(cast.map((c) => c.id), description, {
+        maxTurns: MAX_TURNS,
+      });
+      const latest = {};
+      for (const turn of res.dialogue ?? []) {
+        if (turn.speaker_id !== "writer") latest[turn.speaker_id] = turn.text;
       }
+      setBubbles(latest);
+      setSuggestion(res.suggestion ?? null);
       setPlayed(true);
     } catch (err) {
       setError(err.message || "The scene could not be generated.");
@@ -130,6 +126,35 @@ export default function SceneView({
           </div>
         </div>
         {error && <p style={styles.error}>{error}</p>}
+
+        {suggestion && (
+          <section style={styles.aftermath}>
+            <div style={styles.aftermathCol}>
+              <h3 style={styles.aftermathLabel}>What happened</h3>
+              <p style={styles.summaryText}>{suggestion.summary}</p>
+            </div>
+            {suggestion.character_feelings?.length > 0 && (
+              <div style={styles.aftermathCol}>
+                <h3 style={styles.aftermathLabel}>How they feel now</h3>
+                <div style={styles.feelings}>
+                  {cast.map((c, i) => (
+                    <div key={c.id} style={styles.feelingRow}>
+                      <span style={{ ...styles.feelingAvatar, background: colorFor(c.id) }}>
+                        {initials(c.name)}
+                      </span>
+                      <div>
+                        <div style={styles.feelingName}>{c.name}</div>
+                        <div style={styles.feelingText}>
+                          {suggestion.character_feelings[i]}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
       </main>
 
       {/* ── composer ── */}
@@ -300,6 +325,42 @@ const styles = {
     textAlign: "center",
   },
   error: { color: "#cf222e", fontSize: "0.85rem", textAlign: "center", marginTop: "0.75rem" },
+  aftermath: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: "1.25rem",
+    marginTop: "1rem",
+    background: "#fff",
+    border: "1px solid #e3e1d7",
+    borderRadius: 14,
+    padding: "1.25rem 1.5rem",
+  },
+  aftermathCol: { minWidth: 0 },
+  aftermathLabel: {
+    margin: "0 0 0.6rem",
+    fontSize: "0.68rem",
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#8c959f",
+  },
+  summaryText: { margin: 0, fontSize: "0.92rem", lineHeight: 1.55, color: "#1f2328" },
+  feelings: { display: "flex", flexDirection: "column", gap: "0.85rem" },
+  feelingRow: { display: "flex", gap: "0.6rem", alignItems: "flex-start" },
+  feelingAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: "50%",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: "0.66rem",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  feelingName: { fontWeight: 700, fontSize: "0.85rem" },
+  feelingText: { fontSize: "0.88rem", lineHeight: 1.5, color: "#3d4650", fontStyle: "italic" },
   composer: {
     display: "flex",
     gap: "0.6rem",

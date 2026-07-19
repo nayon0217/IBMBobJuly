@@ -48,18 +48,21 @@ def mock_chat_reply(character_id: str) -> ChatTurn:
 
 
 def mock_scene(character_ids: list[str]) -> tuple[list[ChatTurn], PlotSuggestion]:
-    a, b = character_ids[0], character_ids[1]
-    dialogue = [
-        ChatTurn(speaker_id=a, text=f"[mock] {a} opens the scene."),
-        ChatTurn(speaker_id=b, text=f"[mock] {b} answers, tension rising."),
-        ChatTurn(speaker_id=a, text=f"[mock] {a} presses the point."),
-    ]
+    a = character_ids[0]
+    if len(character_ids) == 1:
+        dialogue = [
+            ChatTurn(speaker_id=a, text=f"[mock] {a} speaks alone, thinking aloud."),
+            ChatTurn(speaker_id=a, text=f"[mock] {a} steadies, resolve hardening."),
+        ]
+    else:
+        b = character_ids[1]
+        dialogue = [
+            ChatTurn(speaker_id=a, text=f"[mock] {a} opens the scene, {b}."),
+            ChatTurn(speaker_id=b, text=f"[mock] {b} answers, tension rising."),
+            ChatTurn(speaker_id=a, text=f"[mock] {a} presses the point."),
+        ]
     suggestion = PlotSuggestion(
-        summary="A latent conflict between the two surfaces under pressure.",
-        what_happens_next=[
-            "Force a choice that splits their loyalties.",
-            "Reveal a secret one of them has been holding.",
-            "Introduce a third party who benefits from their rift.",
-        ],
+        summary="A latent tension surfaces under pressure.",
+        character_feelings=[f"[mock] {cid} is left unsettled." for cid in character_ids],
     )
     return dialogue, suggestion

@@ -50,7 +50,9 @@ Response:
 after that point (spoiler-safe).
 
 ## `POST /scene`  ← the differentiator
-Put two+ characters together and read what emerges.
+Put one or more characters into a situation and read what emerges. Characters
+take turns round-robin, but if a speaker calls another character by name, that
+character replies next (out of turn). One character is a soliloquy.
 
 Request:
 ```json
@@ -60,6 +62,8 @@ Request:
   "max_turns": 6
 }
 ```
+`character_ids` needs at least one id; `max_turns` is 1–20 (default 6).
+
 Response:
 ```json
 {
@@ -70,6 +74,9 @@ Response:
   }
 }
 ```
+`summary` is a third-person recap of the scene. `character_feelings` is how each
+character feels afterwards, in voice — aligned index-for-index with the request's
+`character_ids`.
 
 ---
 
