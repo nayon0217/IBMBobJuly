@@ -9,6 +9,7 @@ export default function ResultsView({
   title,
   wordCount = 0,
   onReset,
+  onOpenChat,
   onOpenWorkspace,
 }) {
   const characters = result?.characters ?? [];
@@ -59,7 +60,13 @@ export default function ResultsView({
             </h2>
             <div style={styles.cardGrid}>
               {top.map((c, i) => (
-                <PersonaCard key={c.id} c={c} rank={i + 1} idToName={idToName} />
+                <PersonaCard
+                  key={c.id}
+                  c={c}
+                  rank={i + 1}
+                  idToName={idToName}
+                  onOpenChat={onOpenChat}
+                />
               ))}
             </div>
           </section>
@@ -71,14 +78,20 @@ export default function ResultsView({
               </h2>
               <div style={styles.list}>
                 {rest.map((c) => (
-                  <div key={c.id} style={styles.listRow}>
+                  <button
+                    key={c.id}
+                    type="button"
+                    style={styles.listRow}
+                    onClick={() => onOpenChat?.(c)}
+                    title={`Chat with ${c.name}`}
+                  >
                     <span style={styles.listName}>{c.name}</span>
                     {c.traits?.length > 0 && (
                       <span style={styles.listTraits}>
                         {c.traits.slice(0, 3).join(", ")}
                       </span>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             </section>
@@ -89,10 +102,15 @@ export default function ResultsView({
   );
 }
 
-function PersonaCard({ c, rank, idToName }) {
+function PersonaCard({ c, rank, idToName, onOpenChat }) {
   const relationships = Object.entries(c.relationships || {});
   return (
-    <article style={styles.card}>
+    <article
+      style={{ ...styles.card, ...(onOpenChat ? styles.cardClickable : {}) }}
+      onClick={() => onOpenChat?.(c)}
+      role={onOpenChat ? "button" : undefined}
+      title={onOpenChat ? `Chat with ${c.name}` : undefined}
+    >
       <div style={styles.cardHead}>
         <div style={styles.rank}>#{rank}</div>
         <div style={{ minWidth: 0 }}>
@@ -113,6 +131,13 @@ function PersonaCard({ c, rank, idToName }) {
             </span>
           ))}
         </div>
+      )}
+
+      {c.physical && (
+        <p style={styles.field}>
+          <span style={styles.fieldLabel}>Appearance</span>
+          <span style={styles.physicalText}>{c.physical}</span>
+        </p>
       )}
 
       {c.voice && (
@@ -145,6 +170,10 @@ function PersonaCard({ c, rank, idToName }) {
             ))}
           </div>
         </div>
+      )}
+
+      {onOpenChat && (
+        <div style={styles.cardCta}>Chat with {c.name} →</div>
       )}
     </article>
   );
@@ -226,6 +255,15 @@ const styles = {
     flexDirection: "column",
     gap: "0.85rem",
   },
+  cardClickable: { cursor: "pointer" },
+  cardCta: {
+    marginTop: "auto",
+    paddingTop: "0.75rem",
+    borderTop: "1px solid #f0f3f6",
+    color: "#3b82d4",
+    fontSize: "0.82rem",
+    fontWeight: 600,
+  },
   cardHead: { display: "flex", alignItems: "center", gap: "0.75rem" },
   rank: {
     width: 30,
@@ -263,6 +301,7 @@ const styles = {
     color: "#3d4650",
     fontStyle: "italic",
   },
+  physicalText: { fontSize: "0.85rem", color: "#3d4650" },
   field: { display: "flex", flexDirection: "column", gap: "0.3rem" },
   fieldLabel: {
     display: "block",
@@ -301,6 +340,12 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "0.1rem",
+    alignItems: "flex-start",
+    textAlign: "left",
+    width: "100%",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    color: "inherit",
   },
   listName: { fontWeight: 600, fontSize: "0.88rem" },
   listTraits: {

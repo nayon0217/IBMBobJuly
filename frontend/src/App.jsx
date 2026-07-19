@@ -6,15 +6,17 @@ import { useState } from "react";
 import UploadView from "./UploadView";
 import ProcessingView from "./ProcessingView";
 import ResultsView from "./ResultsView";
+import ChatView from "./ChatView";
 import WorkspaceView from "./WorkspaceView";
 import { extract } from "./api";
 
 export default function App() {
-  const [phase, setPhase] = useState("upload"); // upload | processing | results | workspace
+  const [phase, setPhase] = useState("upload"); // upload | processing | results | chat | workspace
   const [result, setResult] = useState(null);
   const [title, setTitle] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [error, setError] = useState("");
+  const [activeCharacter, setActiveCharacter] = useState(null);
 
   async function handleSubmit(text, manuscriptTitle) {
     setTitle(manuscriptTitle);
@@ -38,6 +40,12 @@ export default function App() {
     setTitle("");
     setWordCount(0);
     setError("");
+    setActiveCharacter(null);
+  }
+
+  function openChat(character) {
+    setActiveCharacter(character);
+    setPhase("chat");
   }
 
   if (phase === "processing") {
@@ -57,7 +65,19 @@ export default function App() {
         title={title}
         wordCount={wordCount}
         onReset={reset}
+        onOpenChat={openChat}
         onOpenWorkspace={() => setPhase("workspace")}
+      />
+    );
+  }
+
+  if (phase === "chat") {
+    return (
+      <ChatView
+        character={activeCharacter}
+        characters={result?.characters ?? []}
+        title={title}
+        onBack={() => setPhase("results")}
       />
     );
   }

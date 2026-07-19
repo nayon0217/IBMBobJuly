@@ -27,6 +27,11 @@ class PersonaCard(BaseModel):
     traits: list[str] = Field(default_factory=list)
     motivations: list[str] = Field(default_factory=list)
     voice: str = Field("", description="How they speak: register, quirks, tics")
+    physical: str = Field(
+        "",
+        description="Physical appearance grounded in the text: build, age, "
+        "hair, distinctive features. Empty when the manuscript never describes it.",
+    )
     relationships: dict[str, str] = Field(
         default_factory=dict,
         description="Maps another character id -> nature of the relationship",

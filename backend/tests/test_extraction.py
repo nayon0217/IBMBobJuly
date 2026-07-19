@@ -51,12 +51,15 @@ PERSONAS = {
         "traits": ["brave", "curious"],
         "motivations": ["find where he belongs"],
         "voice": "Plain, earnest.",
+        "physical": "A skinny boy with a lightning-shaped scar on his forehead.",
         "relationships": {"vernon-dursley": "resented guardian"},
     },
     "Vernon Dursley": {
         "traits": ["irritable"],
         "motivations": ["keep life normal"],
         "voice": "Blustering, loud.",
+        # physical "unknown" must normalize to an empty string
+        "physical": "unknown",
         # keyed by display name on purpose — normalization must remap it to id
         "relationships": {"Harry Potter": "unwanted nephew"},
     },
@@ -100,6 +103,10 @@ def test_staged_extraction(fake_watsonx):
     by_id = {c.id: c for c in resp.characters}
     harry = by_id["harry-potter"]
     assert harry.traits == ["brave", "curious"]
+    # physical appearance flows through the same grounding call (no extra call)
+    assert "lightning-shaped scar" in harry.physical
+    # a model "unknown" is normalized to empty so the UI can hide the field
+    assert by_id["vernon-dursley"].physical == ""
     # relationships resolve to valid ids (even when the model keyed by name)
     assert harry.relationships == {"vernon-dursley": "resented guardian"}
     assert by_id["vernon-dursley"].relationships == {"harry-potter": "unwanted nephew"}

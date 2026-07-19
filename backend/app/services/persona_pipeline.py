@@ -26,6 +26,7 @@ the LLM discovery/consolidation passes.
 import logging
 import re
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from app.schemas import PersonaCard
@@ -47,6 +48,12 @@ _DISCOVERY_BATCH_CHARS = 48_000
 _KEY_CHUNKS_PER_CHARACTER = 4
 _RETRIEVAL_TOP_K = 6
 _GROUNDING_CHAR_BUDGET = 8_000
+# Only ground the top-N most prominent characters (frequency-ranked). Grounding
+# is one LLM call each, so this caps cost/latency; the rest still appear in the
+# roster returned to the caller but without full persona cards.
+_MAX_GROUNDED_CHARACTERS = 3
+# Grounding calls are independent network I/O, so run them concurrently.
+_GROUNDING_MAX_WORKERS = 8
 # Minor-character cutoff (combined with the model's importance judgment).
 _MINOR_MIN_MENTIONS = 2
 _FALLBACK_ROSTER_SIZE = 8
@@ -77,7 +84,7 @@ Return ONLY valid JSON, no other text:
 CANDIDATE MENTIONS:
 {candidates}"""
 
-PERSONA_PROMPT = """You are writing a character persona card grounded ONLY in the passages provided below. Do not use outside knowledge; do not invent facts. If the passages do not support a field, use "unknown" (for voice) or an empty list (for traits/motivations).
+PERSONA_PROMPT = """You are writing a character persona card grounded ONLY in the passages provided below. Do not use outside knowledge; do not invent facts. If the passages do not support a field, use "unknown" (for voice/physical) or an empty list (for traits/motivations).
 
 CHARACTER: {name}
 ALSO KNOWN AS: {aliases}
@@ -86,7 +93,7 @@ Other characters in this story — use THESE EXACT IDS as relationship keys, and
 {roster}
 
 Return ONLY valid JSON, no other text:
-{{"traits": ["adjective", ...], "motivations": ["what they want", ...], "voice": "how they speak: register, tics, sentence style", "relationships": {{"character-id": "nature of the relationship"}}}}
+{{"traits": ["adjective", ...], "motivations": ["what they want", ...], "voice": "how they speak: register, tics, sentence style", "physical": "appearance grounded in the text: build, age, hair, clothing, distinctive features", "relationships": {{"character-id": "nature of the relationship"}}}}
 
 PASSAGES:
 {passages}"""
@@ -108,7 +115,17 @@ def extract_characters(
     candidates = _discover(chunks, generate, emit)
     roster = _consolidate(candidates, generate, emit)
     survivors = _appearance_scan(roster, chunks, emit)
-    cards = _build_cards(survivors, chunks, vector_store, generate, embed, emit)
+
+    # Cap grounding to the most prominent characters (survivors are already
+    # frequency-ranked, most-mentioned first).
+    grounded = survivors[:_MAX_GROUNDED_CHARACTERS]
+    if len(survivors) > len(grounded):
+        emit(
+            f"Grounding the top {len(grounded)} of {len(survivors)} characters "
+            "(cap) to keep extraction fast."
+        )
+
+    cards = _build_cards(grounded, chunks, vector_store, generate, embed, emit)
 
     emit(f"Done — {len(cards)} character cards built.")
     return cards
@@ -247,11 +264,12 @@ def _build_cards(
     alias_to_id = _alias_to_id_map(roster)
     id_to_name = {e["id"]: e["canonical_name"] for e in roster}
     roster_lines = "\n".join(f"- {e['id']}: {e['canonical_name']}" for e in roster)
+    total = len(roster)
 
-    cards: list[PersonaCard] = []
-    for i, entry in enumerate(roster, start=1):
+    def build_one(indexed: tuple[int, dict]) -> PersonaCard:
+        i, entry = indexed
         name = entry["canonical_name"]
-        emit(f"Stage 4/4 · grounding persona {i} of {len(roster)}: {name}…")
+        emit(f"Stage 4/4 · grounding persona {i} of {total}: {name}…")
 
         passages = _grounding_passages(entry, chunks, vector_store, embed)
         try:
@@ -269,21 +287,28 @@ def _build_cards(
             logger.warning("Persona generation failed for %s: %s", name, exc)
             data = {}
 
-        cards.append(
-            PersonaCard(
-                id=entry["id"],
-                name=name,
-                traits=data.get("traits") or [],
-                motivations=data.get("motivations") or [],
-                voice=data.get("voice") or "",
-                relationships=_normalize_relationships(
-                    data.get("relationships"), alias_to_id, id_to_name, entry["id"]
-                ),
-                key_scene_ids=entry["key_chunk_ids"],
-                first_appearance_chunk=entry["first_appearance_chunk"],
-            )
+        return PersonaCard(
+            id=entry["id"],
+            name=name,
+            traits=data.get("traits") or [],
+            motivations=data.get("motivations") or [],
+            voice=data.get("voice") or "",
+            physical=_clean_physical(data.get("physical")),
+            relationships=_normalize_relationships(
+                data.get("relationships"), alias_to_id, id_to_name, entry["id"]
+            ),
+            key_scene_ids=entry["key_chunk_ids"],
+            first_appearance_chunk=entry["first_appearance_chunk"],
         )
-    return cards
+
+    if not roster:
+        return []
+
+    # Grounding calls are independent, so fan them out; keep the returned cards
+    # in the input (frequency) order regardless of completion order.
+    workers = min(_GROUNDING_MAX_WORKERS, total)
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(pool.map(build_one, enumerate(roster, start=1)))
 
 
 def _grounding_passages(
@@ -392,6 +417,13 @@ def _unique_slug(name: str, used: set[str]) -> str:
 def _slugify(name: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
     return slug or "unknown"
+
+
+def _clean_physical(value: Optional[str]) -> str:
+    """Normalize the model's physical description: treat 'unknown'/blank as
+    empty so the frontend can simply hide the field when nothing was described."""
+    text = (value or "").strip()
+    return "" if text.lower() in {"", "unknown", "n/a", "none"} else text
 
 
 def _dedupe_preserving_order(items: list[str]) -> list[str]:
