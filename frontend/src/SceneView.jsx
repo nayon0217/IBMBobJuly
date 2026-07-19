@@ -5,12 +5,20 @@
 // speech bubble. (The sample UI has a timeline slider here — intentionally
 // omitted; the timeline is chosen during setup.)
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { colorFor } from "./avatar";
 import { buildAvatarUrl } from "./characterAvatar";
 import { runScene } from "./api";
 
 const MAX_TURNS = 6;
+
+// While the backend is thinking, the stage plays a little "conversation":
+// a typing bubble hops from actor to actor and their faces cycle through
+// these expressions so the wait feels alive rather than frozen.
+const THINKING_EMOTIONS = [
+  "smile", "twinkle", "serious", "concerned", "default", "grimace", "sad", "tongue",
+];
+const THINKING_TICK_MS = 1200;
 
 export default function SceneView({
   characters = [],
@@ -30,16 +38,59 @@ export default function SceneView({
   // Drives each actor's facial expression, mirroring the one-on-one chat.
   const [emotions, setEmotions] = useState({});
 
+  // ── loading "conversation" animation ──
+  // A monotonically increasing tick that advances while we wait on the backend.
+  // It picks the actor currently "speaking" and re-keys the typing bubble so it
+  // re-animates each hop.
+  const [thinkingTick, setThinkingTick] = useState(0);
+  // Transient per-character expressions shown only during the wait.
+  const [thinkingEmotions, setThinkingEmotions] = useState({});
+
   // Generated avatar per character id, derived from the persona card's physical
-  // description — same pipeline as the one-on-one chat page. The mouth mirrors
-  // that character's latest line's emotion, so the stage emotes as it plays.
+  // description — same pipeline as the one-on-one chat page. While loading, the
+  // mouth follows the animated "thinking" expression so the faces come alive;
+  // once played, it mirrors that character's latest line's emotion.
   const avatarUrls = useMemo(
     () =>
       Object.fromEntries(
-        cast.map((c) => [c.id, buildAvatarUrl(c.physical, c.id, c.gender, emotions[c.id])])
+        cast.map((c) => {
+          const mouth = loading ? thinkingEmotions[c.id] : emotions[c.id];
+          return [c.id, buildAvatarUrl(c.physical, c.id, c.gender, mouth)];
+        })
       ),
-    [cast, emotions]
+    [cast, emotions, loading, thinkingEmotions]
   );
+
+  // The actor whose typing bubble is currently showing while we wait.
+  const activeSpeakerId =
+    loading && cast.length > 0 ? cast[thinkingTick % cast.length].id : null;
+
+  // Drive the wait animation: hop the speaking bubble and reshuffle every
+  // actor's expression on a fixed cadence until the scene resolves.
+  useEffect(() => {
+    if (!loading || cast.length === 0) return undefined;
+
+    const advance = (tick) => {
+      setThinkingEmotions(() => {
+        const next = {};
+        cast.forEach((c, i) => {
+          next[c.id] = THINKING_EMOTIONS[(tick + i) % THINKING_EMOTIONS.length];
+        });
+        return next;
+      });
+    };
+
+    setThinkingTick(0);
+    advance(0);
+    let tick = 0;
+    const id = setInterval(() => {
+      tick += 1;
+      setThinkingTick(tick);
+      advance(tick);
+    }, THINKING_TICK_MS);
+
+    return () => clearInterval(id);
+  }, [loading, cast]);
   // Seed the composer with the situation the writer sketched during setup.
   const [input, setInput] = useState(situation);
   const [loading, setLoading] = useState(false);
@@ -85,6 +136,7 @@ export default function SceneView({
 
   return (
     <div style={styles.shell}>
+      <style>{keyframes}</style>
       {/* ── top bar ── */}
       <header style={styles.topBar}>
         <button style={styles.backBtn} onClick={onBack}>
@@ -125,25 +177,47 @@ export default function SceneView({
             {cast.length === 0 && (
               <p style={styles.emptyStage}>No characters in this scene.</p>
             )}
-            {cast.map((c) => (
-              <div key={c.id} style={styles.actor}>
-                {bubbles[c.id] ? (
-                  <div style={styles.bubble}>{bubbles[c.id]}</div>
-                ) : loading ? (
-                  <div style={{ ...styles.bubble, ...styles.bubbleGhost }}>…</div>
-                ) : null}
-                {(bubbles[c.id] || loading) && <div style={styles.bubbleTail} />}
-                <img
-                  src={avatarUrls[c.id]}
-                  alt={c.name}
-                  style={{
-                    ...styles.actorAvatar,
-                    background: colorFor(c.id),
-                  }}
-                />
-                <div style={styles.actorName}>{c.name}</div>
-              </div>
-            ))}
+            {cast.map((c) => {
+              const isSpeaking = c.id === activeSpeakerId;
+              return (
+                <div key={c.id} style={styles.actor}>
+                  {bubbles[c.id] ? (
+                    <>
+                      <div style={styles.bubble}>{bubbles[c.id]}</div>
+                      <div style={styles.bubbleTail} />
+                    </>
+                  ) : isSpeaking ? (
+                    <>
+                      <div
+                        key={thinkingTick}
+                        style={{ ...styles.bubble, ...styles.bubbleTyping }}
+                      >
+                        <span style={styles.typingDots}>
+                          <span style={{ ...styles.dot, animationDelay: "0s" }} />
+                          <span style={{ ...styles.dot, animationDelay: "0.18s" }} />
+                          <span style={{ ...styles.dot, animationDelay: "0.36s" }} />
+                        </span>
+                      </div>
+                      <div style={styles.bubbleTail} />
+                    </>
+                  ) : (
+                    // Reserve the bubble's vertical space so avatars don't jump
+                    // as the typing bubble hops between actors.
+                    <div style={styles.bubbleSpacer} />
+                  )}
+                  <img
+                    src={avatarUrls[c.id]}
+                    alt={c.name}
+                    style={{
+                      ...styles.actorAvatar,
+                      background: colorFor(c.id),
+                      ...(isSpeaking ? styles.actorAvatarSpeaking : {}),
+                    }}
+                  />
+                  <div style={styles.actorName}>{c.name}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
         {error && <p style={styles.error}>{error}</p>}
@@ -200,6 +274,23 @@ export default function SceneView({
     </div>
   );
 }
+
+// Injected once via a <style> tag — inline styles can't express keyframes.
+const keyframes = `
+@keyframes scenePop {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.8); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes sceneTyping {
+  0%, 70%, 100% { transform: translateY(0); opacity: 0.35; }
+  35%           { transform: translateY(-5px); opacity: 1; }
+}
+@keyframes sceneBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+`;
 
 const styles = {
   shell: {
@@ -319,6 +410,26 @@ const styles = {
     boxShadow: "none",
     fontStyle: "italic",
   },
+  bubbleTyping: {
+    padding: "0.7rem 0.9rem",
+    animation: "scenePop 0.28s ease-out",
+  },
+  typingDots: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    height: 8,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: "50%",
+    background: "#8a7fb0",
+    display: "inline-block",
+    animation: "sceneTyping 1.1s ease-in-out infinite",
+  },
+  // Keeps the row height stable while the typing bubble hops between actors.
+  bubbleSpacer: { height: 40, marginBottom: "0.35rem" },
   bubbleTail: {
     width: 0,
     height: 0,
@@ -334,6 +445,12 @@ const styles = {
     objectFit: "cover",
     border: "3px solid rgba(255,255,255,0.65)",
     boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+    transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+  },
+  actorAvatarSpeaking: {
+    borderColor: "#fff",
+    boxShadow: "0 0 0 4px rgba(255,255,255,0.25), 0 6px 18px rgba(0,0,0,0.3)",
+    animation: "sceneBob 1.2s ease-in-out infinite",
   },
   actorName: {
     marginTop: "0.5rem",

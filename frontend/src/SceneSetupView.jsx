@@ -17,6 +17,10 @@ export default function SceneSetupView({
 }) {
   const characters = result?.characters ?? [];
   const chunkCount = result?.chunk_count ?? 0;
+  const idToName = useMemo(
+    () => Object.fromEntries(characters.map((c) => [c.id, c.name])),
+    [characters]
+  );
 
   const [mode, setMode] = useState("scene"); // "scene" | "chat"
 
@@ -27,7 +31,6 @@ export default function SceneSetupView({
 
   // Timeline: how far through the manuscript the characters "know". 100 = end.
   const [timeline, setTimeline] = useState(100);
-  const [situation, setSituation] = useState("");
 
   const selectedList = characters.filter((c) => selected.has(c.id));
 
@@ -75,7 +78,7 @@ export default function SceneSetupView({
     }
     onEnterScene?.({
       characterIds: selectedList.map((c) => c.id),
-      situation: situation.trim(),
+      situation: "",
       timeline,
       knowledgeUpToChunk: timeline >= 100 ? null : knowledgeChunk,
     });
@@ -226,23 +229,6 @@ export default function SceneSetupView({
             <div style={styles.timelineReadout}>{timelineLabel}</div>
           </div>
 
-          {mode === "scene" && (
-            <div style={styles.field}>
-              <label style={styles.fieldLabel}>Ready to talk</label>
-              <textarea
-                value={situation}
-                onChange={(e) => setSituation(e.target.value)}
-                placeholder={
-                  namesLabel
-                    ? `${namesLabel} are in the room together. Step in and talk to them — ask anything, and watch them respond in character.`
-                    : "Describe the moment you're dropping them into…"
-                }
-                style={styles.textarea}
-                rows={3}
-              />
-            </div>
-          )}
-
           <button
             style={{ ...styles.enterBtn, ...(canGo ? {} : styles.enterBtnOff) }}
             onClick={submit}
@@ -250,9 +236,95 @@ export default function SceneSetupView({
           >
             {mode === "chat" ? "Start chat →" : "Enter scene →"}
           </button>
+
+          {selectedList.length > 0 && (
+            <section style={styles.cardsSection}>
+              <h2 style={styles.cardsTitle}>
+                {selectedList.length === 1 ? "Persona card" : "Persona cards"}
+              </h2>
+              <div style={styles.cardGrid}>
+                {selectedList.map((c) => (
+                  <PersonaCard key={c.id} c={c} idToName={idToName} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
     </div>
+  );
+}
+
+function PersonaCard({ c, idToName }) {
+  const relationships = Object.entries(c.relationships || {});
+  const sub = [
+    c.gender,
+    typeof c.first_appearance_chunk === "number" &&
+      `first appears in chunk ${c.first_appearance_chunk}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <article style={styles.card}>
+      <div style={styles.cardHead}>
+        <div style={{ ...styles.cardAvatar, background: colorFor(c.id) }}>
+          {initials(c.name)}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={styles.cardName}>{c.name}</div>
+          {sub && <div style={styles.cardSub}>{sub}</div>}
+        </div>
+      </div>
+
+      {c.traits?.length > 0 && (
+        <div style={styles.chips}>
+          {c.traits.map((t) => (
+            <span key={t} style={styles.chip}>
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {c.physical && (
+        <p style={styles.cardField}>
+          <span style={styles.cardFieldLabel}>Appearance</span>
+          <span style={styles.cardBody}>{c.physical}</span>
+        </p>
+      )}
+
+      {c.voice && (
+        <p style={styles.cardVoice}>
+          <span style={styles.cardFieldLabel}>Voice</span>
+          {c.voice}
+        </p>
+      )}
+
+      {c.motivations?.length > 0 && (
+        <div style={styles.cardField}>
+          <span style={styles.cardFieldLabel}>Motivations</span>
+          <ul style={styles.motList}>
+            {c.motivations.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {relationships.length > 0 && (
+        <div style={styles.cardField}>
+          <span style={styles.cardFieldLabel}>Relationships</span>
+          <div style={styles.rels}>
+            {relationships.map(([id, nature]) => (
+              <div key={id} style={styles.relRow}>
+                <span style={styles.relName}>{idToName[id] || id}</span>
+                <span style={styles.relNature}>{nature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -449,20 +521,6 @@ const styles = {
   },
   slider: { width: "100%", accentColor: "#7c5cff", cursor: "pointer" },
   timelineReadout: { fontSize: "0.8rem", color: "#57606a", marginTop: "0.4rem" },
-  textarea: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "0.75rem 0.9rem",
-    borderRadius: 10,
-    border: "1px solid #dcdad0",
-    background: "#fff",
-    fontSize: "0.9rem",
-    fontFamily: "inherit",
-    lineHeight: 1.5,
-    color: "#1f2328",
-    resize: "vertical",
-    outline: "none",
-  },
   enterBtn: {
     background: "#6a4bff",
     color: "#fff",
@@ -476,4 +534,92 @@ const styles = {
     marginTop: "0.5rem",
   },
   enterBtnOff: { background: "#c9c4e8", cursor: "not-allowed" },
+  // ── persona cards ──
+  cardsSection: { marginTop: "2.5rem" },
+  cardsTitle: {
+    fontSize: "0.68rem",
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#8c959f",
+    margin: "0 0 0.85rem",
+  },
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+    gap: "1rem",
+  },
+  card: {
+    background: "#fff",
+    border: "1px solid #e4e2d8",
+    borderRadius: 12,
+    padding: "1.1rem",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+  },
+  cardHead: { display: "flex", alignItems: "center", gap: "0.7rem" },
+  cardAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: "50%",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: "0.8rem",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  cardName: {
+    fontWeight: 700,
+    fontSize: "1rem",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  cardSub: { fontSize: "0.72rem", color: "#8c959f" },
+  chips: { display: "flex", flexWrap: "wrap", gap: "0.35rem" },
+  chip: {
+    background: "#efeafc",
+    color: "#5a44c4",
+    borderRadius: 999,
+    padding: "0.2rem 0.6rem",
+    fontSize: "0.75rem",
+    fontWeight: 500,
+  },
+  cardField: { display: "flex", flexDirection: "column", gap: "0.3rem", margin: 0 },
+  cardFieldLabel: {
+    display: "block",
+    fontSize: "0.66rem",
+    fontWeight: 700,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: "#8c959f",
+  },
+  cardBody: { fontSize: "0.85rem", color: "#3d4650" },
+  cardVoice: {
+    margin: 0,
+    fontSize: "0.85rem",
+    color: "#3d4650",
+    fontStyle: "italic",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.3rem",
+  },
+  motList: {
+    margin: 0,
+    paddingLeft: "1.1rem",
+    fontSize: "0.85rem",
+    color: "#3d4650",
+  },
+  rels: { display: "flex", flexDirection: "column", gap: "0.3rem" },
+  relRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "0.75rem",
+    fontSize: "0.82rem",
+  },
+  relName: { fontWeight: 600, color: "#1f2328", flexShrink: 0 },
+  relNature: { color: "#57606a", textAlign: "right" },
 };
