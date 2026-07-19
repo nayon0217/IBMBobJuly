@@ -6,7 +6,8 @@
 // omitted; the timeline is chosen during setup.)
 
 import { useMemo, useState } from "react";
-import { initials, colorFor } from "./avatar";
+import { colorFor } from "./avatar";
+import { buildAvatarUrl } from "./characterAvatar";
 import { runScene } from "./api";
 
 const MAX_TURNS = 6;
@@ -25,6 +26,20 @@ export default function SceneView({
 
   // Latest spoken line per character id -> text.
   const [bubbles, setBubbles] = useState({});
+  // Latest expression per character id -> emotion (a DiceBear mouth value).
+  // Drives each actor's facial expression, mirroring the one-on-one chat.
+  const [emotions, setEmotions] = useState({});
+
+  // Generated avatar per character id, derived from the persona card's physical
+  // description — same pipeline as the one-on-one chat page. The mouth mirrors
+  // that character's latest line's emotion, so the stage emotes as it plays.
+  const avatarUrls = useMemo(
+    () =>
+      Object.fromEntries(
+        cast.map((c) => [c.id, buildAvatarUrl(c.physical, c.id, c.gender, emotions[c.id])])
+      ),
+    [cast, emotions]
+  );
   // Seed the composer with the situation the writer sketched during setup.
   const [input, setInput] = useState(situation);
   const [loading, setLoading] = useState(false);
@@ -40,6 +55,7 @@ export default function SceneView({
     setError("");
     setLoading(true);
     setBubbles({});
+    setEmotions({});
     setSuggestion(null);
 
     try {
@@ -49,10 +65,15 @@ export default function SceneView({
         maxTurns: MAX_TURNS,
       });
       const latest = {};
+      const latestEmotion = {};
       for (const turn of res.dialogue ?? []) {
-        if (turn.speaker_id !== "writer") latest[turn.speaker_id] = turn.text;
+        if (turn.speaker_id !== "writer") {
+          latest[turn.speaker_id] = turn.text;
+          if (turn.emotion) latestEmotion[turn.speaker_id] = turn.emotion;
+        }
       }
       setBubbles(latest);
+      setEmotions(latestEmotion);
       setSuggestion(res.suggestion ?? null);
       setPlayed(true);
     } catch (err) {
@@ -112,14 +133,14 @@ export default function SceneView({
                   <div style={{ ...styles.bubble, ...styles.bubbleGhost }}>…</div>
                 ) : null}
                 {(bubbles[c.id] || loading) && <div style={styles.bubbleTail} />}
-                <div
+                <img
+                  src={avatarUrls[c.id]}
+                  alt={c.name}
                   style={{
                     ...styles.actorAvatar,
                     background: colorFor(c.id),
                   }}
-                >
-                  {initials(c.name)}
-                </div>
+                />
                 <div style={styles.actorName}>{c.name}</div>
               </div>
             ))}
@@ -139,9 +160,11 @@ export default function SceneView({
                 <div style={styles.feelings}>
                   {cast.map((c, i) => (
                     <div key={c.id} style={styles.feelingRow}>
-                      <span style={{ ...styles.feelingAvatar, background: colorFor(c.id) }}>
-                        {initials(c.name)}
-                      </span>
+                      <img
+                        src={avatarUrls[c.id]}
+                        alt={c.name}
+                        style={{ ...styles.feelingAvatar, background: colorFor(c.id) }}
+                      />
                       <div>
                         <div style={styles.feelingName}>{c.name}</div>
                         <div style={styles.feelingText}>
@@ -308,12 +331,7 @@ const styles = {
     width: 64,
     height: 64,
     borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontSize: "1.1rem",
-    fontWeight: 700,
+    objectFit: "cover",
     border: "3px solid rgba(255,255,255,0.65)",
     boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
   },
@@ -351,12 +369,7 @@ const styles = {
     width: 30,
     height: 30,
     borderRadius: "50%",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: "0.66rem",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    objectFit: "cover",
     flexShrink: 0,
   },
   feelingName: { fontWeight: 700, fontSize: "0.85rem" },

@@ -7,6 +7,7 @@ identical to schemas.py — that's the whole point.
 
 from app.schemas import (
     ChatTurn,
+    Emotion,
     PersonaCard,
     PlotSuggestion,
 )
@@ -44,6 +45,7 @@ def mock_chat_reply(character_id: str) -> ChatTurn:
         speaker_id=character_id,
         text=f"[mock reply from {name}] I would answer you plainly, but the "
         f"real Granite-backed voice is not wired up yet.",
+        emotion=Emotion.SMILE,
     )
 
 
@@ -51,15 +53,15 @@ def mock_scene(character_ids: list[str]) -> tuple[list[ChatTurn], PlotSuggestion
     a = character_ids[0]
     if len(character_ids) == 1:
         dialogue = [
-            ChatTurn(speaker_id=a, text=f"[mock] {a} speaks alone, thinking aloud."),
-            ChatTurn(speaker_id=a, text=f"[mock] {a} steadies, resolve hardening."),
+            ChatTurn(speaker_id=a, text=f"[mock] {a} speaks alone, thinking aloud.", emotion=Emotion.SERIOUS),
+            ChatTurn(speaker_id=a, text=f"[mock] {a} steadies, resolve hardening.", emotion=Emotion.SERIOUS),
         ]
     else:
         b = character_ids[1]
         dialogue = [
-            ChatTurn(speaker_id=a, text=f"[mock] {a} opens the scene, {b}."),
-            ChatTurn(speaker_id=b, text=f"[mock] {b} answers, tension rising."),
-            ChatTurn(speaker_id=a, text=f"[mock] {a} presses the point."),
+            ChatTurn(speaker_id=a, text=f"[mock] {a} opens the scene, {b}.", emotion=Emotion.SMILE),
+            ChatTurn(speaker_id=b, text=f"[mock] {b} answers, tension rising.", emotion=Emotion.CONCERNED),
+            ChatTurn(speaker_id=a, text=f"[mock] {a} presses the point.", emotion=Emotion.SERIOUS),
         ]
     suggestion = PlotSuggestion(
         summary="A latent tension surfaces under pressure.",

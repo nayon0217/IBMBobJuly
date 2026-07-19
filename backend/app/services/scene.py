@@ -23,6 +23,7 @@ from app.config import Backend, settings
 from app.mock_data import mock_scene
 from app.schemas import ChatTurn, PlotSuggestion, SceneRequest, SceneResponse
 from app.services import providers, store
+from app.services.chat import _EMOTION_INSTRUCTION, _split_emotion
 from app.services.extraction import get_character
 from app.services.persona_prompt import build_system_prompt
 
@@ -66,11 +67,15 @@ def run_scene(req: SceneRequest) -> SceneResponse:
     for _ in range(req.max_turns):
         system = build_system_prompt(speaker, grounding[speaker.id])
         prompt = _build_scene_prompt(speaker, req.situation, dialogue, id_to_name)
-        line = provider.generate(
+        raw = provider.generate(
             prompt, system=system, max_tokens=_MAX_LINE_TOKENS
         ).strip()
+        # The generation self-reports the speaker's expression on a tagged first
+        # line (same trick as the one-on-one chat), so the scene avatars can
+        # emote per line with no extra API round-trip.
+        emotion, line = _split_emotion(raw)
         line = _own_line_only(line, speaker, id_to_name)
-        dialogue.append(ChatTurn(speaker_id=speaker.id, text=line))
+        dialogue.append(ChatTurn(speaker_id=speaker.id, text=line, emotion=emotion))
 
         # Heuristic: if this line names another character, they reply next;
         # otherwise fall back to the round-robin successor.
@@ -129,7 +134,8 @@ def _build_scene_prompt(speaker, situation: str, dialogue, id_to_name) -> str:
         f"Continue the scene as {speaker.name}. Write ONLY your single next line of "
         f"dialogue, in the first person and fully in character. Do not narrate, and "
         f"do not write lines for anyone else. If it feels natural, address another "
-        f"character by name."
+        f"character by name.\n\n"
+        f"{_EMOTION_INSTRUCTION}"
     )
 
 

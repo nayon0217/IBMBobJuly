@@ -179,7 +179,7 @@ export default function SceneSetupView({
               </button>
             </div>
             <button style={styles.backBtn} onClick={onBack}>
-              ← Characters
+              ↩ New manuscript
             </button>
           </div>
 

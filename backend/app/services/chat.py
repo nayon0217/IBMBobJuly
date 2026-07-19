@@ -17,10 +17,11 @@ Design notes tying back to the spec:
 """
 
 import logging
+import re
 
 from app.config import Backend, settings
 from app.mock_data import mock_chat_reply
-from app.schemas import ChatRequest, ChatResponse, ChatTurn
+from app.schemas import ChatRequest, ChatResponse, ChatTurn, Emotion
 from app.services import providers, store
 from app.services.extraction import get_character
 from app.services.persona_prompt import build_system_prompt
@@ -50,15 +51,18 @@ def chat(req: ChatRequest) -> ChatResponse:
     # 2. Build the persona system prompt from the card + retrieved passages.
     system = build_system_prompt(character, passages)
 
-    # 3. Fold history + the new message into the user turn and generate.
+    # 3. Fold history + the new message into the user turn and generate. The
+    #    same call also emits an emotion tag on its first line, so we get the
+    #    expression for free — no second API round-trip.
     prompt = _build_user_prompt(character, req)
-    reply_text = provider.generate(
+    raw = provider.generate(
         prompt, system=system, max_tokens=_MAX_REPLY_TOKENS
     ).strip()
+    emotion, reply_text = _split_emotion(raw)
 
     # 4. Assemble the envelope in code — grounded_in is what we retrieved.
     return ChatResponse(
-        reply=ChatTurn(speaker_id=character.id, text=reply_text),
+        reply=ChatTurn(speaker_id=character.id, text=reply_text, emotion=emotion),
         grounded_in=grounded_in,
     )
 
@@ -91,6 +95,34 @@ def _retrieval_query(req: ChatRequest) -> str:
     return " ".join(recent).strip() or req.message
 
 
+# The single generation call also self-reports the speaker's expression. We ask
+# for it on a tagged first line and parse it out, so the emotion costs no extra
+# API call. Values are the Emotion enum verbatim (= DiceBear avataaars mouths).
+_EMOTION_INSTRUCTION = (
+    "Begin your response with a single line in exactly this form:\n"
+    "EMOTION: <one of {options}>\n"
+    "choosing the expression that best fits how you say your reply. Then, on the "
+    "following lines, speak your reply in character. Do not mention the emotion "
+    "line in your reply or repeat it."
+).format(options=", ".join(e.value for e in Emotion))
+
+# Matches the leading "EMOTION: <value>" tag (case-insensitive on the label).
+_EMOTION_RE = re.compile(r"^\s*EMOTION\s*:\s*([A-Za-z]+)\s*\n?", re.IGNORECASE)
+# Map lowercased enum values back to members for tolerant matching.
+_EMOTION_BY_NAME = {e.value.lower(): e for e in Emotion}
+
+
+def _split_emotion(raw: str) -> tuple[Emotion, str]:
+    """Pull the leading EMOTION tag off a generation and return
+    (emotion, clean_reply). Falls back to DEFAULT and leaves the text untouched
+    if the model didn't emit a recognizable tag."""
+    match = _EMOTION_RE.match(raw)
+    if not match:
+        return Emotion.DEFAULT, raw
+    emotion = _EMOTION_BY_NAME.get(match.group(1).lower(), Emotion.DEFAULT)
+    return emotion, raw[match.end():].strip()
+
+
 def _build_user_prompt(character, req: ChatRequest) -> str:
     id_to_name = {c.id: c.name for c in store.get_characters()}
     lines = []
@@ -104,7 +136,8 @@ def _build_user_prompt(character, req: ChatRequest) -> str:
     convo = "\n".join(lines)
 
     instruction = (
-        f'Respond as {character.name}, in first person and fully in character.'
+        f"Respond as {character.name}, in first person and fully in character.\n\n"
+        f"{_EMOTION_INSTRUCTION}"
     )
     if convo:
         return (

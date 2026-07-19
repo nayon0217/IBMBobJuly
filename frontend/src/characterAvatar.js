@@ -130,9 +130,18 @@ function pick(map, text) {
  * @param {string} physical  - The `physical` field of a PersonaCard.
  * @param {string} seed      - Stable seed (use character id).
  * @param {string} gender    - 'male', 'female', 'nonbinary', or ''.
+ * @param {string} mouth     - Optional expression driven by a reply's `emotion`
+ *                             (a DiceBear `mouth` value). Falls back to the
+ *                             neutral default when empty/unknown.
  * @returns {string}  Full URL suitable for an <img src>.
  */
-export function buildAvatarUrl(physical, seed, gender = "") {
+// The valid DiceBear `mouth` values — identical to the backend Emotion enum.
+const MOUTH_VALUES = new Set([
+  "concerned", "default", "eating", "grimace", "sad",
+  "screamOpen", "serious", "smile", "tongue", "twinkle",
+]);
+
+export function buildAvatarUrl(physical, seed, gender = "", mouth = "") {
   // Start with all defaults so nothing is left to the seed's randomness.
   // Use a gender-appropriate default hair style as the baseline top.
   const genderKey = (gender || "").toLowerCase();
@@ -163,6 +172,9 @@ export function buildAvatarUrl(physical, seed, gender = "") {
 
   const clothing = pick(CLOTHING_MAP, physical);
   if (clothing) params.set("clothing", clothing);
+
+  // A reply's emotion overrides the neutral default mouth.
+  if (mouth && MOUTH_VALUES.has(mouth)) params.set("mouth", mouth);
 
   return `${BASE}?${params.toString()}`;
 }

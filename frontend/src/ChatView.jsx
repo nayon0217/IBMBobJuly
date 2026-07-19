@@ -29,12 +29,18 @@ export default function ChatView({ character, characters = [], title, onBack }) 
     );
   }
 
-  const avatarUrl = buildAvatarUrl(character.physical, character.id, character.gender);
-
   // Most recent character reply — shown live in the speech bubble.
   const lastCharMsg = loading
     ? null
     : [...messages].reverse().find((m) => m.speaker_id !== "writer");
+
+  // The avatar's mouth mirrors the latest reply's emotion (neutral by default).
+  const avatarUrl = buildAvatarUrl(
+    character.physical,
+    character.id,
+    character.gender,
+    lastCharMsg?.emotion,
+  );
 
   async function send(e) {
     e?.preventDefault();

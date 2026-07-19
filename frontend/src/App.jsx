@@ -1,19 +1,17 @@
 // App.jsx — root component and screen router. The user moves through screens:
-// Upload -> Processing (loading) -> Results (persona cards). From results they
-// can chat one-on-one with a character, or set up and enter a multi-character
-// scene.
+// Upload -> Processing (loading) -> Scene setup. From scene setup they can chat
+// one-on-one with a character, or set up and enter a multi-character scene.
 
 import { useState } from "react";
 import UploadView from "./UploadView";
 import ProcessingView from "./ProcessingView";
-import ResultsView from "./ResultsView";
 import ChatView from "./ChatView";
 import SceneSetupView from "./SceneSetupView";
 import SceneView from "./SceneView";
 import { extract } from "./api";
 
 export default function App() {
-  const [phase, setPhase] = useState("upload"); // upload | processing | results | chat | sceneSetup | scene
+  const [phase, setPhase] = useState("upload"); // upload | processing | chat | sceneSetup | scene
   const [result, setResult] = useState(null);
   const [title, setTitle] = useState("");
   const [wordCount, setWordCount] = useState(0);
@@ -30,7 +28,7 @@ export default function App() {
     try {
       const res = await extract(text, manuscriptTitle);
       setResult(res);
-      setPhase("results");
+      setPhase("sceneSetup");
     } catch (e) {
       // Stay on the processing screen and surface the error there.
       setError(e.message || "Extraction failed.");
@@ -67,26 +65,13 @@ export default function App() {
     );
   }
 
-  if (phase === "results") {
-    return (
-      <ResultsView
-        result={result}
-        title={title}
-        wordCount={wordCount}
-        onReset={reset}
-        onOpenChat={openChat}
-        onOpenScene={() => setPhase("sceneSetup")}
-      />
-    );
-  }
-
   if (phase === "chat") {
     return (
       <ChatView
         character={activeCharacter}
         characters={result?.characters ?? []}
         title={title}
-        onBack={() => setPhase("results")}
+        onBack={() => setPhase("sceneSetup")}
       />
     );
   }
@@ -97,7 +82,7 @@ export default function App() {
         result={result}
         title={title}
         wordCount={wordCount}
-        onBack={() => setPhase("results")}
+        onBack={reset}
         onStartChat={openChat}
         onEnterScene={enterScene}
       />

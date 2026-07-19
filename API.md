@@ -42,12 +42,19 @@ Request:
 Response:
 ```json
 {
-  "reply": { "speaker_id": "elizabeth-bennet", "text": "..." },
+  "reply": { "speaker_id": "elizabeth-bennet", "text": "...", "emotion": "smile" },
   "grounded_in": ["chunk-3", "chunk-11"]
 }
 ```
 `knowledge_up_to_chunk` is optional; when set, the character can't know events
 after that point (spoiler-safe).
+
+`reply.emotion` is the speaker's facial expression for that line, one of
+`concerned`, `default`, `eating`, `grimace`, `sad`, `screamOpen`, `serious`,
+`smile`, `tongue`, `twinkle` (matches the DiceBear avataaars `mouth` enum, so
+the frontend can render it directly). It's produced inside the same generation
+call as the reply — no extra API call — and falls back to `default`. Writer
+turns always carry `default`.
 
 ## `POST /scene`  ← the differentiator
 Put one or more characters into a situation and read what emerges. Characters
@@ -67,7 +74,7 @@ Request:
 Response:
 ```json
 {
-  "dialogue": [ { "speaker_id": "...", "text": "..." }, ... ],
+  "dialogue": [ { "speaker_id": "...", "text": "...", "emotion": "serious" }, ... ],
   "suggestion": {
     "summary": "...",
     "character_feelings": ["...", "...", "..."]
@@ -77,6 +84,11 @@ Response:
 `summary` is a third-person recap of the scene. `character_feelings` is how each
 character feels afterwards, in voice — aligned index-for-index with the request's
 `character_ids`.
+
+Each dialogue turn's `emotion` is the speaker's facial expression for that line
+(same enum and same in-generation trick as `/chat`, no extra API call), so the
+scene stage can emote per line — an actor's avatar takes on the expression of
+their most recent line.
 
 ---
 

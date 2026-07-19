@@ -53,11 +53,34 @@ class PersonaCard(BaseModel):
     )
 
 
+class Emotion(str, Enum):
+    """The speaker's facial expression for a line, mirrored index-for-index by
+    the DiceBear avataaars `mouth` enum so the frontend can render it directly.
+    Values match that enum verbatim; DEFAULT is the neutral fallback."""
+
+    CONCERNED = "concerned"  # tight, slightly downturned lip
+    DEFAULT = "default"  # closed, straight, emotionless line
+    EATING = "eating"  # tongue visibly extended
+    GRIMACE = "grimace"  # lips pulled tight in discomfort or tension
+    SAD = "sad"  # pronounced frown with drooping corners
+    SCREAM_OPEN = "screamOpen"  # mouth wide open, shouting or screaming
+    SERIOUS = "serious"  # straighter, firmer line than the default
+    SMILE = "smile"  # standard, friendly closed-lip smile
+    TONGUE = "tongue"  # playful, tongue poking out
+    TWINKLE = "twinkle"  # expressive, wider grin
+
+
 class ChatTurn(BaseModel):
     """One line of a conversation, from the writer or a character."""
 
     speaker_id: str = Field(..., description="'writer' or a character id")
     text: str
+    emotion: Emotion = Field(
+        Emotion.DEFAULT,
+        description="The speaker's facial expression for this line. Populated "
+        "for character replies from the same generation call (no extra API "
+        "call); writer turns keep the neutral default.",
+    )
 
 
 # --- /extract ----------------------------------------------------------------
