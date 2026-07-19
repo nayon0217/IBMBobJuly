@@ -1,12 +1,10 @@
-// ChatView.jsx — one-on-one chat with a single character. Styled to match the
-// scene page: warm canvas, purple writer bubbles, a colored character avatar,
-// and a pill composer. The writer types a question, it's sent as a ChatRequest,
-// and the character agent replies in voice. History is the running transcript
-// minus the new message.
+// ChatView.jsx — split layout: large character avatar + speech bubble on the
+// left, scrolling conversation history on the right, composer pinned at bottom.
 
 import { useEffect, useRef, useState } from "react";
 import { chat } from "./api";
-import { initials, colorFor } from "./avatar";
+import { colorFor } from "./avatar";
+import { buildAvatarUrl } from "./characterAvatar";
 import { T } from "./theme";
 
 export default function ChatView({ character, characters = [], title, onBack }) {
@@ -26,14 +24,17 @@ export default function ChatView({ character, characters = [], title, onBack }) 
     return (
       <div style={styles.page}>
         <p>No character selected.</p>
-        <button style={styles.backBtn} onClick={onBack}>
-          ← Back
-        </button>
+        <button style={styles.backBtn} onClick={onBack}>← Back</button>
       </div>
     );
   }
 
-  const accent = colorFor(character.id);
+  const avatarUrl = buildAvatarUrl(character.physical, character.id, character.gender);
+
+  // Most recent character reply — shown live in the speech bubble.
+  const lastCharMsg = loading
+    ? null
+    : [...messages].reverse().find((m) => m.speaker_id !== "writer");
 
   async function send(e) {
     e?.preventDefault();
@@ -57,63 +58,75 @@ export default function ChatView({ character, characters = [], title, onBack }) 
 
   return (
     <div style={styles.page}>
+
+      {/* ── top bar ──────────────────────────────────────────────────── */}
       <header style={styles.header}>
-        <button style={styles.backBtn} onClick={onBack}>
-          ← Characters
-        </button>
-        <div style={{ ...styles.avatar, background: accent }}>
-          {initials(character.name)}
-        </div>
-        <div>
-          <div style={styles.name}>{character.name}</div>
-          <div style={styles.sub}>{title || "Manuscript"}</div>
+        <button style={styles.backBtn} onClick={onBack}>← Characters</button>
+        <div style={styles.headerTitle}>
+          <span style={styles.headerName}>{character.name}</span>
+          <span style={styles.headerSub}>{title || "Manuscript"}</span>
         </div>
       </header>
 
-      <main style={styles.thread}>
-        {messages.length === 0 && (
-          <p style={styles.empty}>
-            Ask {character.name} anything — they only know the story up to where
-            they've been.
-          </p>
-        )}
-        {messages.map((m, i) => {
-          const mine = m.speaker_id === "writer";
-          return (
-            <div
-              key={i}
-              style={{ ...styles.row, justifyContent: mine ? "flex-end" : "flex-start" }}
-            >
-              {!mine && (
-                <div style={{ ...styles.msgAvatar, background: accent }}>
-                  {initials(idToName[m.speaker_id] || character.name)}
-                </div>
-              )}
-              <div style={{ ...styles.bubble, ...(mine ? styles.mine : styles.theirs) }}>
-                {!mine && (
-                  <div style={styles.speaker}>
-                    {idToName[m.speaker_id] || character.name}
-                  </div>
-                )}
-                {m.text}
-              </div>
-            </div>
-          );
-        })}
-        {loading && (
-          <div style={{ ...styles.row, justifyContent: "flex-start" }}>
-            <div style={{ ...styles.msgAvatar, background: accent }}>
-              {initials(character.name)}
-            </div>
-            <div style={{ ...styles.bubble, ...styles.theirs, ...styles.typing }}>
-              {character.name} is thinking…
-            </div>
-          </div>
-        )}
-        {error && <p style={styles.error}>{error}</p>}
-        <div ref={endRef} />
-      </main>
+      {/* ── body ─────────────────────────────────────────────────────── */}
+      <div style={styles.body}>
 
+        {/* ── LEFT: avatar + speech bubble ─────────────────────────── */}
+        <div style={styles.avatarPanel}>
+
+          {/* Speech bubble — always visible, updates with latest reply */}
+          <div style={styles.speechBubbleWrap}>
+            <div style={{
+              ...styles.speechBubble,
+              ...((!lastCharMsg && !loading) ? styles.speechBubbleEmpty : {}),
+            }}>
+              {loading
+                ? <span style={styles.typingDots}>● &nbsp;● &nbsp;●</span>
+                : lastCharMsg
+                  ? lastCharMsg.text
+                  : `Ask me anything…`}
+            </div>
+            {/* Triangle tail pointing down toward the avatar's mouth */}
+            <div style={styles.bubbleTail} />
+          </div>
+
+          <img src={avatarUrl} alt={character.name} style={styles.bigAvatar} />
+          <div style={styles.avatarName}>{character.name}</div>
+        </div>
+
+        {/* ── RIGHT: conversation history ───────────────────────────── */}
+        <div style={styles.thread}>
+          {messages.length === 0 && (
+            <p style={styles.empty}>
+              Your conversation with {character.name} will appear here.
+            </p>
+          )}
+
+          {messages.map((m, i) => {
+            const mine = m.speaker_id === "writer";
+            return (
+              <div
+                key={i}
+                style={{ ...styles.row, justifyContent: mine ? "flex-end" : "flex-start" }}
+              >
+                <div style={{ ...styles.bubble, ...(mine ? styles.mine : styles.theirs) }}>
+                  {!mine && (
+                    <div style={styles.speaker}>
+                      {idToName[m.speaker_id] || character.name}
+                    </div>
+                  )}
+                  {m.text}
+                </div>
+              </div>
+            );
+          })}
+
+          {error && <p style={styles.error}>{error}</p>}
+          <div ref={endRef} />
+        </div>
+      </div>
+
+      {/* ── composer ─────────────────────────────────────────────────── */}
       <form style={styles.composer} onSubmit={send}>
         <input
           style={styles.input}
@@ -121,6 +134,7 @@ export default function ChatView({ character, characters = [], title, onBack }) 
           onChange={(e) => setInput(e.target.value)}
           placeholder={`Message ${character.name}…`}
           disabled={loading}
+          autoFocus
         />
         <button
           style={{ ...styles.sendBtn, ...(loading || !input.trim() ? styles.sendBtnOff : {}) }}
@@ -136,13 +150,16 @@ export default function ChatView({ character, characters = [], title, onBack }) 
 
 const styles = {
   page: {
-    minHeight: "100vh",
+    height: "100vh",
     display: "flex",
     flexDirection: "column",
     background: T.bg,
     fontFamily: T.font,
     color: T.ink,
+    overflow: "hidden",
   },
+
+  // ── header ──────────────────────────────────────────────────────────
   header: {
     display: "flex",
     alignItems: "center",
@@ -150,21 +167,11 @@ const styles = {
     padding: "0.9rem 1.5rem",
     background: T.surface,
     borderBottom: `1px solid ${T.border}`,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontSize: "0.85rem",
-    fontWeight: 700,
     flexShrink: 0,
   },
-  name: { fontWeight: 700, fontSize: "1.05rem" },
-  sub: { fontSize: "0.78rem", color: T.inkMuted },
+  headerTitle: { display: "flex", flexDirection: "column" },
+  headerName: { fontWeight: 700, fontSize: "1rem" },
+  headerSub: { fontSize: "0.75rem", color: T.inkMuted },
   backBtn: {
     background: "none",
     border: `1px solid ${T.borderStrong}`,
@@ -174,42 +181,114 @@ const styles = {
     cursor: "pointer",
     color: T.inkSoft,
     fontFamily: "inherit",
+    flexShrink: 0,
   },
+
+  // ── body ────────────────────────────────────────────────────────────
+  body: {
+    flex: 1,
+    display: "flex",
+    overflow: "hidden",
+  },
+
+  // ── avatar panel (left ~40%) ─────────────────────────────────────
+  avatarPanel: {
+    width: "38%",
+    flexShrink: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    padding: "1.5rem 1.25rem 1rem",
+    background: T.surface,
+    borderRight: `1px solid ${T.border}`,
+    position: "relative",
+    gap: "0.4rem",
+  },
+  bigAvatar: {
+    width: "min(280px, 72%)",
+    height: "min(280px, 72%)",
+    flexShrink: 0,
+  },
+  avatarName: {
+    fontSize: "0.85rem",
+    fontWeight: 600,
+    color: T.inkMuted,
+    letterSpacing: "0.02em",
+  },
+
+  // ── speech bubble ───────────────────────────────────────────────
+  speechBubbleWrap: {
+    position: "absolute",
+    top: "1.25rem",
+    left: "1rem",
+    right: "1rem",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+  },
+  speechBubble: {
+    background: T.surface,
+    border: `2px solid ${T.ink}`,
+    borderRadius: 16,
+    padding: "0.85rem 1rem",
+    fontSize: "0.92rem",
+    lineHeight: 1.55,
+    color: T.ink,
+    width: "100%",
+    boxSizing: "border-box",
+    maxHeight: 200,
+    overflowY: "auto",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+  },
+  speechBubbleEmpty: {
+    color: T.inkMuted,
+    fontStyle: "italic",
+    borderColor: T.borderStrong,
+    borderStyle: "dashed",
+  },
+  // CSS triangle tail pointing down toward the avatar's mouth
+  bubbleTail: {
+    marginLeft: "2.25rem",
+    width: 0,
+    height: 0,
+    borderLeft: "9px solid transparent",
+    borderRight: "9px solid transparent",
+    borderTop: `13px solid ${T.ink}`,
+  },
+  typingDots: {
+    letterSpacing: "0.2em",
+    color: T.inkMuted,
+    fontSize: "1rem",
+  },
+
+  // ── conversation history (right pane) ─────────────────────────
   thread: {
     flex: 1,
     overflowY: "auto",
-    padding: "1.5rem",
-    maxWidth: 720,
-    width: "100%",
-    margin: "0 auto",
-    boxSizing: "border-box",
+    padding: "1.25rem",
     display: "flex",
     flexDirection: "column",
-    gap: "0.75rem",
+    gap: "0.65rem",
   },
-  empty: { color: T.inkMuted, fontSize: "0.9rem", textAlign: "center", marginTop: "2rem" },
-  row: { display: "flex", alignItems: "flex-end", gap: "0.5rem" },
-  msgAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontSize: "0.62rem",
-    fontWeight: 700,
-    flexShrink: 0,
+  empty: {
+    color: T.inkMuted,
+    fontSize: "0.88rem",
+    textAlign: "center",
+    marginTop: "2rem",
   },
+  row: { display: "flex" },
   bubble: {
-    maxWidth: "80%",
-    padding: "0.7rem 0.95rem",
+    maxWidth: "88%",
+    padding: "0.65rem 0.9rem",
     borderRadius: 16,
-    fontSize: "0.92rem",
+    fontSize: "0.9rem",
     lineHeight: 1.5,
     whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
   },
-  mine: { background: T.accent, color: "#fff", borderBottomRightRadius: 4 },
+  mine: { background: T.accent, color: "#fff", borderBottomRightRadius: 4, marginLeft: "auto" },
   theirs: {
     background: T.surface,
     border: `1px solid ${T.border}`,
@@ -218,23 +297,21 @@ const styles = {
     boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
   },
   speaker: {
-    fontSize: "0.72rem",
+    fontSize: "0.7rem",
     fontWeight: 700,
     color: T.inkMuted,
-    marginBottom: "0.25rem",
+    marginBottom: "0.2rem",
   },
-  typing: { color: T.inkMuted, fontStyle: "italic" },
   error: { color: T.danger, fontSize: "0.85rem", textAlign: "center" },
+
+  // ── composer ────────────────────────────────────────────────────
   composer: {
     display: "flex",
     gap: "0.6rem",
-    padding: "1rem 1.5rem",
+    padding: "0.9rem 1.25rem",
     background: T.surface,
     borderTop: `1px solid ${T.border}`,
-    maxWidth: 720,
-    width: "100%",
-    margin: "0 auto",
-    boxSizing: "border-box",
+    flexShrink: 0,
   },
   input: {
     flex: 1,
