@@ -6,3 +6,10 @@ pytest>=8.0
 # Uncomment when wiring the real backend (Person A):
 # ibm-watsonx-ai>=1.0
 # chromadb>=0.5        # or pymilvus, whichever vector store you pick
+langchain
+langchain-ibm
+pinecone
+fastapi
+uvicorn
+pydantic
+python-dotenv
