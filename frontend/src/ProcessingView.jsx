@@ -4,7 +4,6 @@
 // the pipeline is doing rather than reflecting exact server progress.
 
 import { useEffect, useState } from "react";
-import { T } from "./theme";
 
 const STAGES = [
   "Reading your manuscript…",
@@ -29,12 +28,12 @@ export default function ProcessingView({ title, error, onBack }) {
 
   if (error) {
     return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <div style={styles.errorIcon}>⚠</div>
-          <h2 style={styles.errorTitle}>Extraction failed</h2>
-          <p style={styles.errorText}>{error}</p>
-          <button style={styles.backBtn} onClick={onBack}>
+      <div className="mc-screen mc-loader-page">
+        <div className="mc-loader-card">
+          <div className="mc-err-icon">⚠</div>
+          <h2 className="mc-err-title">Extraction failed</h2>
+          <p className="mc-err-text">{error}</p>
+          <button className="mc-btn mc-btn--accent" onClick={onBack}>
             ← Back to upload
           </button>
         </div>
@@ -43,171 +42,36 @@ export default function ProcessingView({ title, error, onBack }) {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.spinner} />
-        <h2 style={styles.title}>
+    <div className="mc-screen mc-loader-page">
+      <div className="mc-loader-card">
+        <div className="mc-spin" />
+        <h2 className="mc-loader-title">
           Bringing {title ? `“${title}”` : "your manuscript"} to life
         </h2>
-        <p style={styles.stageText}>{STAGES[stage]}</p>
+        <p className="mc-loader-stage">{STAGES[stage]}</p>
 
-        <div style={styles.steps}>
+        <div className="mc-steps">
           {STAGES.map((label, i) => (
-            <div key={label} style={styles.stepRow}>
+            <div key={label} className="mc-step-row">
               <span
-                style={{
-                  ...styles.stepDot,
-                  ...(i < stage
-                    ? styles.stepDone
-                    : i === stage
-                    ? styles.stepActive
-                    : {}),
-                }}
+                className={
+                  "mc-step-dot" +
+                  (i < stage ? " is-done" : i === stage ? " is-active" : "")
+                }
               >
                 {i < stage ? "✓" : ""}
               </span>
-              <span
-                style={{
-                  ...styles.stepLabel,
-                  ...(i <= stage ? styles.stepLabelActive : {}),
-                }}
-              >
+              <span className={"mc-step-label" + (i <= stage ? " is-active" : "")}>
                 {label}
               </span>
             </div>
           ))}
         </div>
 
-        <p style={styles.hint}>
+        <p className="mc-hint">
           This can take a minute on a full-length manuscript — hang tight.
         </p>
       </div>
-
-      <style>{keyframes}</style>
     </div>
   );
 }
-
-const keyframes = `
-@keyframes mc-spin { to { transform: rotate(360deg); } }
-@keyframes mc-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-`;
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: T.bg,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem 1rem",
-    fontFamily: T.font,
-    color: T.ink,
-    lineHeight: 1.6,
-  },
-  card: {
-    background: T.surface,
-    border: `1px solid ${T.border}`,
-    borderRadius: T.radiusLg,
-    padding: "2.5rem",
-    width: "100%",
-    maxWidth: 480,
-    textAlign: "center",
-    boxSizing: "border-box",
-    boxShadow: "0 8px 30px rgba(60,50,90,0.05)",
-  },
-  spinner: {
-    width: 44,
-    height: 44,
-    margin: "0 auto 1.25rem",
-    borderRadius: "50%",
-    border: `3px solid ${T.border}`,
-    borderTopColor: T.accent,
-    animation: "mc-spin 0.9s linear infinite",
-  },
-  title: {
-    margin: "0 0 0.35rem",
-    fontSize: "1.2rem",
-    fontWeight: 700,
-  },
-  stageText: {
-    margin: "0 0 1.5rem",
-    color: T.accent,
-    fontWeight: 500,
-    fontSize: "0.95rem",
-    animation: "mc-pulse 1.6s ease-in-out infinite",
-  },
-  steps: {
-    textAlign: "left",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.6rem",
-    maxWidth: 320,
-    margin: "0 auto",
-  },
-  stepRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.6rem",
-  },
-  stepDot: {
-    width: 20,
-    height: 20,
-    borderRadius: "50%",
-    border: `2px solid ${T.borderStrong}`,
-    color: "#fff",
-    fontSize: "0.7rem",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  stepDone: {
-    background: T.success,
-    borderColor: T.success,
-  },
-  stepActive: {
-    borderColor: T.accent,
-    boxShadow: "0 0 0 3px rgba(106,75,255,0.15)",
-  },
-  stepLabel: {
-    fontSize: "0.85rem",
-    color: T.inkMuted,
-  },
-  stepLabelActive: {
-    color: T.ink,
-  },
-  hint: {
-    marginTop: "1.75rem",
-    marginBottom: 0,
-    fontSize: "0.8rem",
-    color: T.inkMuted,
-  },
-  errorIcon: {
-    fontSize: "2rem",
-    color: T.danger,
-    marginBottom: "0.5rem",
-  },
-  errorTitle: {
-    margin: "0 0 0.5rem",
-    fontSize: "1.15rem",
-    fontWeight: 700,
-  },
-  errorText: {
-    color: T.inkSoft,
-    fontSize: "0.9rem",
-    margin: "0 0 1.5rem",
-    wordBreak: "break-word",
-  },
-  backBtn: {
-    background: T.accent,
-    color: "#fff",
-    border: "none",
-    borderRadius: T.radius,
-    padding: "0.6rem 1.4rem",
-    fontSize: "0.9rem",
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-};

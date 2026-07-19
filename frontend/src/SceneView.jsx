@@ -4,6 +4,8 @@
 // and each character's line from the returned dialogue floats above them as a
 // speech bubble. (The sample UI has a timeline slider here — intentionally
 // omitted; the timeline is chosen during setup.)
+// Styling: "The Reading Room" (theme.css) — a warm espresso atrium around a
+// mood-tinted stage with serif, paper-textured speech bubbles.
 
 import { useEffect, useMemo, useState } from "react";
 import { colorFor } from "./avatar";
@@ -34,6 +36,10 @@ const SCENE_GRADIENTS = [
   { words: ["love", "romance", "kiss", "rose", "wedding"], gradient: "linear-gradient(180deg, #4a1f3a 0%, #a3436b 55%, #e39ab0 100%)" },
   { words: ["ball", "ballroom", "party", "palace", "candle", "candlelight", "feast", "banquet"], gradient: "linear-gradient(180deg, #3a1f2e 0%, #7a3a4a 55%, #c98a6a 100%)" },
 ];
+
+// A warm depth vignette layered above whichever mood gradient is chosen, so the
+// stage always reads as a recessed, grounded space.
+const STAGE_VIGNETTE = "radial-gradient(80% 60% at 50% 120%, rgba(0,0,0,0.35), transparent 60%)";
 
 // Pick a stage gradient from the scene description. Matches on whole words so a
 // scene like "trapped by rain in a parlour" tints stormy grey.
@@ -179,25 +185,17 @@ export default function SceneView({
   }
 
   return (
-    <div style={styles.shell}>
-      <style>{keyframes}</style>
+    <div className="mc-screen mc-scene-shell">
       {/* ── top bar ── */}
-      <header style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>
+      <header className="mc-scene-bar">
+        <button className="mc-btn mc-btn--ghost-dark" onClick={onBack}>
           ← Back
         </button>
-        <span style={styles.topTitle}>{title || "Scene"}</span>
-        <div style={styles.chips}>
+        <span className="mc-scene-title">{title || "Scene"}</span>
+        <div className="mc-chips">
           {cast.map((c) => (
-            <span
-              key={c.id}
-              style={{
-                ...styles.chip,
-                color: colorFor(c.id),
-                borderColor: colorFor(c.id),
-              }}
-            >
-              <span style={{ ...styles.chipDot, background: colorFor(c.id) }} />
+            <span key={c.id} className="mc-chip">
+              <span className="mc-chip-dot" style={{ background: colorFor(c.id) }} />
               {c.name}
             </span>
           ))}
@@ -205,90 +203,89 @@ export default function SceneView({
       </header>
 
       {/* ── stage ── */}
-      <main style={styles.stageWrap}>
-        <div style={{ ...styles.stage, background: stageGradient }}>
-          <div style={styles.stageLabel}>
+      <main className="mc-stage-wrap">
+        <div
+          className="mc-stage"
+          style={{ background: `${STAGE_VIGNETTE}, ${stageGradient}` }}
+        >
+          <div className="mc-stage-label">
             {loading ? "Scene in progress…" : played ? "Scene" : "Set the scene"}
           </div>
 
           {!played && !loading && cast.length > 0 && (
-            <p style={styles.stageHint}>
+            <p className="mc-stage-hint">
               Describe an imaginary scene below and press Play to watch it unfold.
             </p>
           )}
 
-          <div style={styles.actors}>
+          <div className="mc-actors">
             {cast.length === 0 && (
-              <p style={styles.emptyStage}>No characters in this scene.</p>
+              <p className="mc-empty-stage">No characters in this scene.</p>
             )}
             {cast.map((c) => {
               const isSpeaking = c.id === activeSpeakerId;
               return (
-                <div key={c.id} style={styles.actor}>
+                <div key={c.id} className="mc-actor">
                   {bubbles[c.id] ? (
                     <>
-                      <div style={styles.bubble}>{bubbles[c.id]}</div>
-                      <div style={styles.bubbleTail} />
+                      <div className="mc-bubble">{bubbles[c.id]}</div>
+                      <div className="mc-bubble-tail" />
                     </>
                   ) : isSpeaking ? (
                     <>
-                      <div
-                        key={thinkingTick}
-                        style={{ ...styles.bubble, ...styles.bubbleTyping }}
-                      >
-                        <span style={styles.typingDots}>
-                          <span style={{ ...styles.dot, animationDelay: "0s" }} />
-                          <span style={{ ...styles.dot, animationDelay: "0.18s" }} />
-                          <span style={{ ...styles.dot, animationDelay: "0.36s" }} />
+                      <div key={thinkingTick} className="mc-bubble">
+                        <span className="mc-typing">
+                          <span className="mc-typing-dot" style={{ animationDelay: "0s" }} />
+                          <span className="mc-typing-dot" style={{ animationDelay: "0.18s" }} />
+                          <span className="mc-typing-dot" style={{ animationDelay: "0.36s" }} />
                         </span>
                       </div>
-                      <div style={styles.bubbleTail} />
+                      <div className="mc-bubble-tail" />
                     </>
                   ) : (
                     // Reserve the bubble's vertical space so avatars don't jump
                     // as the typing bubble hops between actors.
-                    <div style={styles.bubbleSpacer} />
+                    <div className="mc-bubble-spacer" />
                   )}
                   <img
                     src={avatarUrls[c.id]}
                     alt={c.name}
-                    style={{
-                      ...styles.actorAvatar,
-                      background: colorFor(c.id),
-                      // Bigger until this actor's final line lands, so the
-                      // stage doesn't feel empty before the scene plays.
-                      ...(bubbles[c.id] ? {} : styles.actorAvatarIdle),
-                      ...(isSpeaking ? styles.actorAvatarSpeaking : {}),
-                    }}
+                    className={
+                      "mc-actor-avatar" +
+                      (bubbles[c.id] ? "" : " idle") +
+                      (isSpeaking ? " speaking" : "")
+                    }
+                    style={{ background: colorFor(c.id) }}
                   />
-                  <div style={styles.actorName}>{c.name}</div>
+                  <div className="mc-actor-name">{c.name}</div>
                 </div>
               );
             })}
           </div>
         </div>
-        {error && <p style={styles.error}>{error}</p>}
+        {error && <p className="mc-scene-error">{error}</p>}
 
         {suggestion && (
-          <section style={styles.aftermath}>
-            <div style={styles.aftermathCol}>
-              <h3 style={styles.aftermathLabel}>What happened</h3>
-              <p style={styles.summaryText}>{suggestion.summary}</p>
+          <section className="mc-colophon">
+            <div>
+              <h4>What happened</h4>
+              <p className="summary">{suggestion.summary}</p>
             </div>
             {suggestion.character_feelings?.length > 0 && (
-              <div style={styles.aftermathCol}>
-                <h3 style={styles.aftermathLabel}>How they feel now</h3>
-                <div style={styles.feelings}>
+              <div>
+                <h4>How they feel now</h4>
+                <div>
                   {cast.map((c, i) => (
-                    <div key={c.id} style={styles.feelingRow}>
+                    <div key={c.id} className="mc-feel">
                       <img
                         src={avatarUrls[c.id]}
                         alt={c.name}
-                        style={{ ...styles.feelingAvatar, background: colorFor(c.id) }}
+                        className="mc-medallion"
+                        style={{ width: 34, height: 34, background: colorFor(c.id) }}
                       />
                       <div>
-                        <div style={styles.feelingName}>{c.name}</div>
-                        <div style={styles.feelingText}>
+                        <div className="mc-feel-name">{c.name}</div>
+                        <div className="mc-feel-text">
                           {suggestion.character_feelings[i]}
                         </div>
                       </div>
@@ -302,9 +299,9 @@ export default function SceneView({
       </main>
 
       {/* ── composer ── */}
-      <form style={styles.composer} onSubmit={playScene}>
+      <form className="mc-composer" onSubmit={playScene}>
         <input
-          style={styles.input}
+          className="mc-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder='Describe an imaginary scene… e.g. "They are trapped by rain in a parlour."'
@@ -312,7 +309,7 @@ export default function SceneView({
         />
         <button
           type="submit"
-          style={{ ...styles.askBtn, ...(loading || !input.trim() ? styles.askBtnOff : {}) }}
+          className="mc-btn mc-btn--warm mc-btn--pill mc-btn--lg"
           disabled={loading || !input.trim()}
         >
           {loading ? "…" : played ? "Replay" : "Play"}
@@ -321,257 +318,3 @@ export default function SceneView({
     </div>
   );
 }
-
-// Injected once via a <style> tag — inline styles can't express keyframes.
-const keyframes = `
-@keyframes scenePop {
-  0%   { opacity: 0; transform: translateY(8px) scale(0.8); }
-  60%  { opacity: 1; transform: translateY(-2px) scale(1.04); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes sceneTyping {
-  0%, 70%, 100% { transform: translateY(0); opacity: 0.35; }
-  35%           { transform: translateY(-5px); opacity: 1; }
-}
-@keyframes sceneBob {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-5px); }
-}
-`;
-
-const styles = {
-  shell: {
-    display: "flex",
-    flexDirection: "column",
-    height: "100vh",
-    fontFamily: '-apple-system, "Segoe UI", system-ui, sans-serif',
-    color: "#1f2328",
-    background: "#f4f2ec",
-  },
-  topBar: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-    padding: "0.75rem 1.25rem",
-    background: "#fff",
-    borderBottom: "1px solid #e5e7eb",
-    flexShrink: 0,
-  },
-  backBtn: {
-    background: "none",
-    border: "1px solid #d0d7de",
-    borderRadius: 8,
-    padding: "0.4rem 0.85rem",
-    fontSize: "0.82rem",
-    cursor: "pointer",
-    color: "#57606a",
-    fontFamily: "inherit",
-  },
-  topTitle: { fontWeight: 700, fontSize: "0.95rem" },
-  chips: { display: "flex", gap: "0.4rem", flexWrap: "wrap", marginLeft: "0.5rem" },
-  chip: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.35rem",
-    border: "1px solid",
-    borderRadius: 999,
-    padding: "0.2rem 0.6rem",
-    fontSize: "0.72rem",
-    fontWeight: 600,
-    background: "#fff",
-  },
-  chipDot: { width: 7, height: 7, borderRadius: "50%" },
-  stageWrap: {
-    flex: 1,
-    overflow: "auto",
-    padding: "1rem 1.25rem",
-    display: "flex",
-    flexDirection: "column",
-  },
-  stage: {
-    flex: 1,
-    borderRadius: 16,
-    background: DEFAULT_STAGE_GRADIENT,
-    transition: "background 0.8s ease",
-    position: "relative",
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-around",
-    padding: "2rem 2.5rem 3rem",
-    minHeight: 420,
-    overflow: "hidden",
-  },
-  stageLabel: {
-    position: "absolute",
-    top: "1.25rem",
-    left: 0,
-    right: 0,
-    textAlign: "center",
-    color: "rgba(255,255,255,0.65)",
-    fontSize: "0.7rem",
-    fontWeight: 700,
-    letterSpacing: "0.14em",
-    textTransform: "uppercase",
-  },
-  actors: {
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-around",
-    width: "100%",
-    gap: "1.5rem",
-    flexWrap: "wrap",
-  },
-  emptyStage: { color: "rgba(255,255,255,0.7)", fontSize: "0.9rem" },
-  stageHint: {
-    position: "absolute",
-    top: "50%",
-    left: 0,
-    right: 0,
-    transform: "translateY(-50%)",
-    textAlign: "center",
-    color: "rgba(255,255,255,0.55)",
-    fontSize: "0.9rem",
-    padding: "0 2rem",
-    margin: 0,
-  },
-  actor: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    maxWidth: 200,
-  },
-  bubble: {
-    background: "#fff",
-    color: "#1f2328",
-    borderRadius: 14,
-    padding: "0.6rem 0.8rem",
-    fontSize: "0.82rem",
-    lineHeight: 1.4,
-    maxWidth: 220,
-    boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-    marginBottom: "0.35rem",
-    textAlign: "center",
-  },
-  bubbleGhost: {
-    background: "rgba(255,255,255,0.25)",
-    color: "rgba(255,255,255,0.85)",
-    boxShadow: "none",
-    fontStyle: "italic",
-  },
-  bubbleTyping: {
-    padding: "0.7rem 0.9rem",
-    animation: "scenePop 0.28s ease-out",
-  },
-  typingDots: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    height: 8,
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: "50%",
-    background: "#8a7fb0",
-    display: "inline-block",
-    animation: "sceneTyping 1.1s ease-in-out infinite",
-  },
-  // Keeps the row height stable while the typing bubble hops between actors.
-  bubbleSpacer: { height: 40, marginBottom: "0.35rem" },
-  bubbleTail: {
-    width: 0,
-    height: 0,
-    borderLeft: "6px solid transparent",
-    borderRight: "6px solid transparent",
-    borderTop: "7px solid #fff",
-    marginBottom: "0.75rem",
-  },
-  actorAvatar: {
-    width: 88,
-    height: 88,
-    borderRadius: "50%",
-    objectFit: "cover",
-    border: "3px solid rgba(255,255,255,0.65)",
-    boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
-    transition:
-      "width 0.35s ease, height 0.35s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-  },
-  // Larger while the actor has no final line yet (setup + thinking).
-  actorAvatarIdle: {
-    width: 140,
-    height: 140,
-  },
-  actorAvatarSpeaking: {
-    borderColor: "#fff",
-    boxShadow: "0 0 0 4px rgba(255,255,255,0.25), 0 6px 18px rgba(0,0,0,0.3)",
-    animation: "sceneBob 1.2s ease-in-out infinite",
-  },
-  actorName: {
-    marginTop: "0.5rem",
-    color: "#fff",
-    fontSize: "0.78rem",
-    fontWeight: 600,
-    textAlign: "center",
-  },
-  error: { color: "#cf222e", fontSize: "0.85rem", textAlign: "center", marginTop: "0.75rem" },
-  aftermath: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "1.25rem",
-    marginTop: "1rem",
-    background: "#fff",
-    border: "1px solid #e3e1d7",
-    borderRadius: 14,
-    padding: "1.25rem 1.5rem",
-  },
-  aftermathCol: { minWidth: 0 },
-  aftermathLabel: {
-    margin: "0 0 0.6rem",
-    fontSize: "0.68rem",
-    fontWeight: 700,
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "#8c959f",
-  },
-  summaryText: { margin: 0, fontSize: "0.92rem", lineHeight: 1.55, color: "#1f2328" },
-  feelings: { display: "flex", flexDirection: "column", gap: "0.85rem" },
-  feelingRow: { display: "flex", gap: "0.6rem", alignItems: "flex-start" },
-  feelingAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: "50%",
-    objectFit: "cover",
-    flexShrink: 0,
-  },
-  feelingName: { fontWeight: 700, fontSize: "0.85rem" },
-  feelingText: { fontSize: "0.88rem", lineHeight: 1.5, color: "#3d4650", fontStyle: "italic" },
-  composer: {
-    display: "flex",
-    gap: "0.6rem",
-    padding: "1rem 1.25rem",
-    background: "#fff",
-    borderTop: "1px solid #e5e7eb",
-    flexShrink: 0,
-  },
-  input: {
-    flex: 1,
-    padding: "0.75rem 1rem",
-    borderRadius: 999,
-    border: "1px solid #d0d7de",
-    fontSize: "0.9rem",
-    fontFamily: "inherit",
-    outline: "none",
-  },
-  askBtn: {
-    background: "#6a4bff",
-    color: "#fff",
-    border: "none",
-    borderRadius: 999,
-    padding: "0.75rem 1.5rem",
-    fontSize: "0.9rem",
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  },
-  askBtnOff: { background: "#c9c4e8", cursor: "not-allowed" },
-};

@@ -1,9 +1,11 @@
 // UploadView.jsx — Landing page. Accepts a manuscript via file upload
 // (.txt, .pdf, .docx) or paste-text, then triggers extraction.
+// Styling: "The Reading Room" (see theme.css) — a warm, book-forward hero with
+// a catalogued shelf, a slipcase upload card, and chapter-style steps.
 
 import { useState, useRef, useCallback } from "react";
 import { extractTextFromFile } from "./fileText";
-import { T } from "./theme";
+import { useReveal } from "./useReveal";
 
 const ACCEPTED = {
   "text/plain": ".txt",
@@ -13,6 +15,17 @@ const ACCEPTED = {
 };
 
 const ACCEPT_STRING = Object.values(ACCEPTED).join(",");
+
+// Decorative spines for the hero shelf — archetypes, not extracted characters
+// (the real cast is discovered only after a manuscript is processed).
+const SHELF = [
+  { n: "001", label: "The Protagonist", cls: "s1" },
+  { n: "002", label: "The Rival", cls: "s2" },
+  { n: "003", label: "The Confidante", cls: "s3" },
+  { n: "004", label: "The Beloved", cls: "s4" },
+  { n: "005", label: "The Mentor", cls: "s5" },
+  { n: "006", label: "The Narrator", cls: "s6" },
+];
 
 export default function UploadView({ onSubmit }) {
   const [mode, setMode] = useState("file"); // "file" | "paste"
@@ -25,6 +38,7 @@ export default function UploadView({ onSubmit }) {
   const [progress, setProgress] = useState(""); // human-readable status line
 
   const inputRef = useRef();
+  const revealRef = useReveal();
 
   const isFileMode = mode === "file";
   const canSubmit =
@@ -86,153 +100,226 @@ export default function UploadView({ onSubmit }) {
   }
 
   return (
-    <div style={styles.page}>
-      {/* ── header ─────────────────────────────────────────────────── */}
-      <header style={styles.header}>
-        <div style={styles.logo}>✦ Manuscript Characters</div>
-        <p style={styles.tagline}>
-          Upload your manuscript and bring your characters to life with AI.
-        </p>
-      </header>
+    <div className="mc-screen" ref={revealRef}>
+      <div className="mc-wrap">
+        {/* ── header ─────────────────────────────────────────────────── */}
+        <header className="mc-top">
+          <div className="mc-mark">Manuscript Characters<span className="dot">.</span></div>
+          <p className="mc-tagline">Bring the voices in your manuscript to life with AI.</p>
+        </header>
 
-      {/* ── card ───────────────────────────────────────────────────── */}
-      <div style={styles.card}>
-        <h2 style={styles.cardTitle}>Upload your manuscript</h2>
-
-        {/* mode tabs */}
-        <div style={styles.tabs}>
-          <button
-            style={{ ...styles.tab, ...(isFileMode ? styles.tabActive : {}) }}
-            onClick={() => setMode("file")}
-            type="button"
-          >
-            File upload
-          </button>
-          <button
-            style={{ ...styles.tab, ...(!isFileMode ? styles.tabActive : {}) }}
-            onClick={() => setMode("paste")}
-            type="button"
-          >
-            Paste text
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} style={styles.form}>
-          {/* title field */}
-          <label style={styles.label}>
-            Manuscript title <span style={styles.optional}>(optional)</span>
-            <input
-              style={styles.input}
-              type="text"
-              placeholder="e.g. Pride and Prejudice"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
-
-          {/* file drop zone */}
-          {isFileMode && (
-            <div
-              style={{
-                ...styles.dropzone,
-                ...(dragging ? styles.dropzoneDragging : {}),
-                ...(file ? styles.dropzoneHasFile : {}),
-              }}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onClick={() => inputRef.current?.click()}
-            >
-              <input
-                ref={inputRef}
-                type="file"
-                accept={ACCEPT_STRING}
-                style={{ display: "none" }}
-                onChange={(e) => e.target.files[0] && handleFileChosen(e.target.files[0])}
-              />
-              {file ? (
-                <div style={styles.fileInfo}>
-                  <span style={styles.fileIcon}>{fileIcon(file.name)}</span>
-                  <div>
-                    <div style={styles.fileName}>{file.name}</div>
-                    <div style={styles.fileSize}>{formatSize(file.size)}</div>
-                  </div>
-                  <button
-                    type="button"
-                    style={styles.removeBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFile(null);
-                      setTitle("");
-                      setStatus(null);
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
-                <div style={styles.dropPrompt}>
-                  <div style={styles.dropIcon}>↑</div>
-                  <div>
-                    Drag &amp; drop your manuscript here, or{" "}
-                    <span style={styles.browseLink}>browse</span>
-                  </div>
-                  <div style={styles.supportedTypes}>
-                    Supported formats: .txt &nbsp;·&nbsp; .pdf &nbsp;·&nbsp; .docx
-                  </div>
-                </div>
-              )}
+        {/* ── hero ───────────────────────────────────────────────────── */}
+        <section className="mc-hero">
+          <div className="mc-reveal">
+            <div className="mc-chapter">
+              <span className="mc-rule" />
+              <span className="mc-eyebrow">Chapter I — The Cast</span>
             </div>
-          )}
+            <h1 className="mc-display">
+              Every manuscript is a room <em>full of voices.</em>
+            </h1>
+            <p className="mc-lede">
+              Upload your manuscript and bring your characters to life with AI —
+              talk with them one-on-one, or set them loose together in a scene.
+            </p>
+            <div className="mc-filetags">
+              <span className="mc-filetag">.TXT</span>
+              <span className="mc-filetag">.PDF</span>
+              <span className="mc-filetag">.DOCX</span>
+            </div>
+          </div>
 
-          {/* paste textarea */}
-          {!isFileMode && (
-            <label style={styles.label}>
-              Paste manuscript text
-              <textarea
-                style={styles.textarea}
-                placeholder="Paste the full text of your manuscript here…"
-                value={pasteText}
-                onChange={(e) => setPasteText(e.target.value)}
-                rows={12}
-              />
-              <span style={styles.charCount}>{pasteText.length.toLocaleString()} characters</span>
-            </label>
-          )}
+          <div className="mc-shelf mc-reveal" style={{ "--d": "120ms" }}>
+            <span className="mc-shelf-cap">Every cast has its shelf</span>
+            <div className="mc-spines">
+              {SHELF.map((s) => (
+                <div key={s.n} className={`mc-spine ${s.cls}`}>
+                  <small>{s.n}</small>
+                  {s.label}
+                </div>
+              ))}
+            </div>
+            <div className="mc-shelf-base" />
+          </div>
+        </section>
 
-          {/* status / error */}
-          {progress && status !== "error" && (
-            <p style={{ ...styles.statusMsg, color: T.inkSoft }}>{progress}</p>
-          )}
-          {errorMsg && <p style={styles.errorMsg}>⚠ {errorMsg}</p>}
+        {/* ── intake / upload ────────────────────────────────────────── */}
+        <section className="mc-section">
+          <div className="mc-sec-head mc-reveal">
+            <span className="mc-sec-num">§ 01</span>
+            <h2>Submit a manuscript to the library</h2>
+          </div>
 
-          {/* submit */}
-          <button
-            type="submit"
-            style={{ ...styles.submitBtn, ...(canSubmit ? {} : styles.submitBtnDisabled) }}
-            disabled={!canSubmit}
-          >
-            {status === "reading" ? "Reading…" : "Process manuscript →"}
-          </button>
-        </form>
-      </div>
+          <div className="mc-hero" style={{ padding: 0, alignItems: "start" }}>
+            {/* upload slipcase */}
+            <div className="mc-slipcase mc-reveal">
+              <h3 className="mc-slip-title">Upload your manuscript</h3>
 
-      {/* ── how it works ───────────────────────────────────────────── */}
-      <div style={styles.howItWorks}>
-        <div style={styles.step}>
-          <div style={styles.stepNum}>1</div>
-          <div>Upload or paste your manuscript</div>
-        </div>
-        <div style={styles.stepArrow}>→</div>
-        <div style={styles.step}>
-          <div style={styles.stepNum}>2</div>
-          <div>AI extracts your characters</div>
-        </div>
-        <div style={styles.stepArrow}>→</div>
-        <div style={styles.step}>
-          <div style={styles.stepNum}>3</div>
-          <div>Chat with them or run scenes</div>
-        </div>
+              {/* mode tabs */}
+              <div className="mc-tabs" role="tablist" style={{ marginBottom: "1.3rem" }}>
+                <button
+                  className={`mc-tab${isFileMode ? " is-on" : ""}`}
+                  onClick={() => setMode("file")}
+                  type="button"
+                >
+                  File upload
+                </button>
+                <button
+                  className={`mc-tab${!isFileMode ? " is-on" : ""}`}
+                  onClick={() => setMode("paste")}
+                  type="button"
+                >
+                  Paste text
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit}>
+                {/* title field */}
+                <label className="mc-field">
+                  <span className="mc-label">
+                    Manuscript title <span className="mc-opt">(optional)</span>
+                  </span>
+                  <input
+                    className="mc-input"
+                    type="text"
+                    placeholder="e.g. Pride and Prejudice"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </label>
+
+                {/* file drop zone */}
+                {isFileMode && (
+                  <div className="mc-field">
+                    <span className="mc-label">Manuscript file</span>
+                    <div
+                      className={
+                        "mc-drop" +
+                        (dragging ? " is-drag" : "") +
+                        (file ? " has-file" : "")
+                      }
+                      tabIndex={0}
+                      role="button"
+                      aria-label="Upload manuscript"
+                      onDragOver={onDragOver}
+                      onDragLeave={onDragLeave}
+                      onDrop={onDrop}
+                      onClick={() => inputRef.current?.click()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          inputRef.current?.click();
+                        }
+                      }}
+                    >
+                      <input
+                        ref={inputRef}
+                        type="file"
+                        accept={ACCEPT_STRING}
+                        style={{ display: "none" }}
+                        onChange={(e) =>
+                          e.target.files[0] && handleFileChosen(e.target.files[0])
+                        }
+                      />
+                      {file ? (
+                        <div className="mc-fileinfo">
+                          <span className="mc-fileicon">{fileIcon(file.name)}</span>
+                          <div>
+                            <div className="mc-filename">{file.name}</div>
+                            <div className="mc-filesize">{formatSize(file.size)}</div>
+                          </div>
+                          <button
+                            type="button"
+                            className="mc-remove"
+                            aria-label="Remove file"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFile(null);
+                              setTitle("");
+                              setStatus(null);
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mc-drop-up">↑</div>
+                          <p>
+                            Drag &amp; drop your manuscript here, or{" "}
+                            <span className="mc-browse">browse</span>
+                          </p>
+                          <div className="mc-fmt">
+                            SUPPORTED · .TXT · .PDF · .DOCX
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* paste textarea */}
+                {!isFileMode && (
+                  <label className="mc-field">
+                    <span className="mc-label">Paste manuscript text</span>
+                    <textarea
+                      className="mc-textarea"
+                      placeholder="Paste the full text of your manuscript here…"
+                      value={pasteText}
+                      onChange={(e) => setPasteText(e.target.value)}
+                      rows={12}
+                    />
+                    <span className="mc-charcount">
+                      {pasteText.length.toLocaleString()} characters
+                    </span>
+                  </label>
+                )}
+
+                {/* status / error */}
+                {progress && status !== "error" && (
+                  <p className="mc-status" style={{ marginBottom: "1rem" }}>{progress}</p>
+                )}
+                {errorMsg && (
+                  <p className="mc-error" style={{ marginBottom: "1rem" }}>⚠ {errorMsg}</p>
+                )}
+
+                {/* submit */}
+                <button
+                  type="submit"
+                  className="mc-btn mc-btn--primary mc-btn--block mc-btn--lg"
+                  disabled={!canSubmit}
+                >
+                  {status === "reading" ? "Reading…" : "Process manuscript →"}
+                </button>
+              </form>
+            </div>
+
+            {/* how it works — as chapters */}
+            <div className="mc-chapters">
+              <div className="mc-step-lg mc-reveal">
+                <span className="mc-rn">i.</span>
+                <div>
+                  <h4>Deposit the text</h4>
+                  <p>Upload or paste your manuscript. Nothing leaves the shelf without your say.</p>
+                </div>
+              </div>
+              <div className="mc-step-lg mc-reveal" style={{ "--d": "90ms" }}>
+                <span className="mc-rn">ii.</span>
+                <div>
+                  <h4>The cast is catalogued</h4>
+                  <p>AI reads the whole work and extracts your characters, their aliases and the timeline.</p>
+                </div>
+              </div>
+              <div className="mc-step-lg mc-reveal" style={{ "--d": "180ms" }}>
+                <span className="mc-rn">iii.</span>
+                <div>
+                  <h4>Bring them off the page</h4>
+                  <p>Chat with a character one-on-one, or stage several together in a live scene.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -250,248 +337,3 @@ function formatSize(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-// ── styles ───────────────────────────────────────────────────────────────
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: T.bg,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: "3rem 1rem 4rem",
-    fontFamily: T.font,
-    color: T.ink,
-    lineHeight: 1.6,
-  },
-  header: {
-    textAlign: "center",
-    marginBottom: "2.5rem",
-  },
-  logo: {
-    fontSize: "1.6rem",
-    fontWeight: 700,
-    letterSpacing: "-0.02em",
-    marginBottom: "0.4rem",
-  },
-  tagline: {
-    color: T.inkSoft,
-    fontSize: "1rem",
-    margin: 0,
-  },
-  card: {
-    background: T.surface,
-    border: `1px solid ${T.border}`,
-    borderRadius: T.radiusLg,
-    padding: "2rem 2.5rem",
-    width: "100%",
-    maxWidth: 560,
-    boxSizing: "border-box",
-    boxShadow: "0 8px 30px rgba(60,50,90,0.05)",
-  },
-  cardTitle: {
-    margin: "0 0 1.25rem",
-    fontSize: "1.15rem",
-    fontWeight: 600,
-  },
-  tabs: {
-    display: "flex",
-    background: "#ecebe4",
-    borderRadius: T.radius,
-    padding: 3,
-    gap: 2,
-    marginBottom: "1.5rem",
-  },
-  tab: {
-    flex: 1,
-    background: "none",
-    border: "none",
-    borderRadius: 8,
-    padding: "0.45rem 1rem",
-    cursor: "pointer",
-    fontSize: "0.88rem",
-    fontWeight: 600,
-    color: T.inkSoft,
-    fontFamily: "inherit",
-  },
-  tabActive: {
-    background: T.surface,
-    color: T.ink,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.25rem",
-  },
-  label: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.4rem",
-    fontSize: "0.875rem",
-    fontWeight: 500,
-  },
-  optional: {
-    fontWeight: 400,
-    color: T.inkSoft,
-    fontSize: "0.8rem",
-  },
-  input: {
-    border: `1px solid ${T.borderStrong}`,
-    borderRadius: T.radius,
-    padding: "0.6rem 0.85rem",
-    fontSize: "0.95rem",
-    outline: "none",
-    fontFamily: "inherit",
-    background: T.surface,
-  },
-  dropzone: {
-    border: `2px dashed ${T.borderStrong}`,
-    borderRadius: T.radius,
-    padding: "2rem 1.5rem",
-    cursor: "pointer",
-    transition: "border-color 0.15s, background 0.15s",
-    background: T.surfaceAlt,
-    textAlign: "center",
-  },
-  dropzoneDragging: {
-    borderColor: T.accent,
-    background: T.accentBg,
-  },
-  dropzoneHasFile: {
-    borderColor: T.success,
-    background: "#f0faf7",
-    textAlign: "left",
-    cursor: "default",
-  },
-  dropPrompt: {
-    color: T.inkSoft,
-    fontSize: "0.9rem",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "0.4rem",
-  },
-  dropIcon: {
-    fontSize: "1.75rem",
-    color: T.inkMuted,
-  },
-  browseLink: {
-    color: T.accent,
-    fontWeight: 600,
-    textDecoration: "underline",
-    cursor: "pointer",
-  },
-  supportedTypes: {
-    fontSize: "0.78rem",
-    color: T.inkMuted,
-    marginTop: "0.2rem",
-  },
-  fileInfo: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-  },
-  fileIcon: {
-    fontSize: "1.75rem",
-    flexShrink: 0,
-  },
-  fileName: {
-    fontWeight: 500,
-    fontSize: "0.9rem",
-    wordBreak: "break-all",
-  },
-  fileSize: {
-    color: T.inkSoft,
-    fontSize: "0.8rem",
-  },
-  removeBtn: {
-    marginLeft: "auto",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: T.inkMuted,
-    fontSize: "1rem",
-    flexShrink: 0,
-    padding: "0.25rem",
-  },
-  textarea: {
-    border: `1px solid ${T.borderStrong}`,
-    borderRadius: T.radius,
-    padding: "0.65rem 0.85rem",
-    fontSize: "0.9rem",
-    fontFamily: "inherit",
-    resize: "vertical",
-    outline: "none",
-    lineHeight: 1.55,
-    color: T.ink,
-    background: T.surface,
-  },
-  charCount: {
-    fontSize: "0.78rem",
-    color: T.inkMuted,
-    alignSelf: "flex-end",
-  },
-  statusMsg: {
-    margin: 0,
-    fontSize: "0.85rem",
-  },
-  errorMsg: {
-    margin: 0,
-    fontSize: "0.85rem",
-    color: T.danger,
-    background: T.dangerBg,
-    border: `1px solid ${T.dangerBorder}`,
-    borderRadius: T.radius,
-    padding: "0.5rem 0.75rem",
-  },
-  submitBtn: {
-    background: T.accent,
-    color: "#fff",
-    border: "none",
-    borderRadius: T.radius,
-    padding: "0.7rem 1.4rem",
-    fontSize: "0.95rem",
-    fontWeight: 600,
-    cursor: "pointer",
-    alignSelf: "flex-end",
-    fontFamily: "inherit",
-    transition: "background 0.15s",
-  },
-  submitBtnDisabled: {
-    background: T.accentDisabled,
-    cursor: "not-allowed",
-  },
-  howItWorks: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    marginTop: "2.5rem",
-    color: T.inkSoft,
-    fontSize: "0.85rem",
-    flexWrap: "wrap",
-    justifyContent: "center",
-  },
-  step: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
-  stepNum: {
-    width: 24,
-    height: 24,
-    borderRadius: "50%",
-    background: T.accentBg,
-    color: T.accent,
-    fontSize: "0.75rem",
-    fontWeight: 700,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  stepArrow: {
-    color: T.borderStrong,
-    fontWeight: 300,
-  },
-};

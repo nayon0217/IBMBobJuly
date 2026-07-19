@@ -1,46 +1,49 @@
-// theme.js — shared design tokens. Everything is tuned to match the scene
-// page: a warm off-white canvas, a purple accent, warm-grey borders, rounded
-// controls, and a dark navy sidebar. Import { T } and reference these instead
-// of hard-coding hexes so the whole app stays visually consistent.
+// theme.js — shared design tokens (JS mirror of the CSS custom properties in
+// theme.css, "The Reading Room" system). Prefer the CSS classes/vars in
+// theme.css for styling; these JS values exist for the few places that compute
+// styles in JavaScript. A warm paper canvas, oxblood + gilt accents, a serif
+// display voice, and a deep espresso "atrium" for the staged surfaces.
 
 export const T = {
   // surfaces
-  bg: "#f4f2ec", // warm off-white canvas
-  surface: "#ffffff",
-  surfaceAlt: "#faf9f4",
-  navy: "#161320", // dark sidebar / inverted panels
-  navyInk: "#e7e4ef",
-  navyMuted: "#8b869c",
-  navyRow: "#211d30",
+  bg: "#f3efe4", // warm paper canvas
+  surface: "#fbf8f0",
+  surfaceAlt: "#f6f2e7",
+  navy: "#241b13", // espresso panels (kept key name for compatibility)
+  navyInk: "#efe7d6",
+  navyMuted: "#8a7c64",
+  navyRow: "#2f2417",
 
   // text
-  ink: "#1f2328",
-  inkSoft: "#57606a",
-  inkMuted: "#8c959f",
+  ink: "#241f17",
+  inkSoft: "#5a5142",
+  inkMuted: "#8f8672",
 
   // borders
-  border: "#e3e1d7",
-  borderStrong: "#d6d3c7",
+  border: "#d8d0bd",
+  borderStrong: "#c8bfa8",
 
-  // accent (purple)
-  accent: "#6a4bff",
-  accentSoft: "#7c5cff",
-  accentDisabled: "#c9c4e8",
-  accentBg: "#efecfe",
+  // accent (oxblood / terracotta / gilt)
+  accent: "#7a2e2b",
+  accentSoft: "#c06a3f",
+  accentDisabled: "#cbb9a6",
+  accentBg: "#f1e7dd",
+  gild: "#b6893f",
 
   // status
-  danger: "#cf222e",
-  dangerBg: "#fdf1f1",
-  dangerBorder: "#f3d0d2",
-  success: "#2f8f7c",
+  danger: "#a83228",
+  dangerBg: "#f6e7e2",
+  dangerBorder: "#e6c9c1",
+  success: "#2f7d5b",
 
   // shape
-  radius: 10,
-  radiusLg: 14,
+  radius: 8,
+  radiusLg: 12,
   radiusPill: 999,
 
-  font: '-apple-system, "Segoe UI", system-ui, sans-serif',
+  font: 'ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif',
+  serif: '"Hoefler Text", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif',
 
-  // the scene stage gradient, reused for accents/hero moments
-  stageGradient: "linear-gradient(180deg, #3b2f5e 0%, #6a4a6b 55%, #a97e86 100%)",
+  // the espresso atrium gradient, reused for accents/hero moments
+  stageGradient: "linear-gradient(180deg, #2a2018 0%, #1c140c 55%, #12100b 100%)",
 };
