@@ -5,12 +5,15 @@
 
 import { useEffect, useState } from "react";
 
+// Written as a get-in rather than a progress log: each label names a thing a
+// theatre does before a performance, in the order the pipeline actually does
+// its equivalent (read → roster → index → ground → ready).
 const STAGES = [
   "Reading the script…",
-  "Building the vector index…",
-  "Calling the cast…",
-  "Matching names and aliases…",
-  "Marking the running order…",
+  "Printing cast list…",
+  "Building the set…",
+  "Setting the stage…",
+  "Focusing the spotlights…",
 ];
 
 export default function ProcessingView({ title, error, onBack }) {

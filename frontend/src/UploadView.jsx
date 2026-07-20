@@ -170,7 +170,9 @@ export default function UploadView({ onSubmit }) {
         {/* ── intake / upload ────────────────────────────────────────── */}
         <section className="mc-section" id="intake">
           <div className="mc-sec-head mc-reveal">
-            <h2>Submit a manuscript, enter its green room</h2>
+            <h2>
+              Submit a manuscript, <em>enter its green room.</em>
+            </h2>
           </div>
 
           <div className="mc-hero" style={{ padding: 0, alignItems: "start" }}>
@@ -246,7 +248,6 @@ export default function UploadView({ onSubmit }) {
                       />
                       {file ? (
                         <div className="mc-fileinfo">
-                          <span className="mc-fileicon">{fileIcon(file.name)}</span>
                           <div>
                             <div className="mc-filename">{file.name}</div>
                             <div className="mc-filesize">{formatSize(file.size)}</div>
@@ -349,12 +350,6 @@ export default function UploadView({ onSubmit }) {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────
-function fileIcon(name) {
-  if (name.endsWith(".pdf")) return "📄";
-  if (name.endsWith(".docx") || name.endsWith(".doc")) return "📝";
-  return "📃";
-}
-
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;

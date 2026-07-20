@@ -4,13 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Green Room</title>
+
+    <!-- SVG first for browsers that take it; the PNGs cover the rest. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/favicon-180.png" />
+    <meta name="theme-color" content="#f3efe4" />
+
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       body { margin: 0; }
-      @keyframes shimmer {
-        0%   { background-position: 200% center; }
-        100% { background-position: -200% center; }
-      }
     </style>
   </head>
   <body>

@@ -1,8 +1,10 @@
-# Manuscript Characters
+# The Green Room
 
-Upload a manuscript, talk to your characters, and watch them interact to
-generate plot ideas. Built for the IBM Bob AI Builders Challenge (July theme:
-*Reimagine Creative Industries with AI*).
+A green room is where a theatre's cast wait before going on. Upload a
+manuscript and this one fills with its characters — talk to them one at a
+time, or put several on stage together and watch what they do to each other.
+Built for the IBM Bob AI Builders Challenge (July theme: *Reimagine Creative
+Industries with AI*).
 
 The magic moment: a writer sets a scene, two of their own characters play it
 out, and the tool surfaces a plot direction they hadn't thought of.

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>The Green Room</title>
+  <!-- A stripped-down version of the hero couch, built to survive 16px: three
+       spines instead of nine, no tufting, no curtain, no nailheads. The paper
+       ground keeps the mark legible on both light and dark tab bars, and the
+       warm spines carry the contrast against the emerald.
+       Draw order matters — back, spines, seat, arms — so the cushion covers the
+       foot of each book and the arms sit in front of the cushion. -->
+
+  <rect width="64" height="64" rx="11" fill="#f3efe4"/>
+
+  <!-- couch back -->
+  <rect x="13" y="22" width="38" height="22" rx="6" fill="#1c5d45"/>
+
+  <!-- The cast. The tall centre spine is the writer's own manuscript, so it
+       takes the navy of the face-out book in the hero — and navy is the one
+       value that holds against both the emerald and the paper it rises into.
+       A cream spine here read as a hole in the icon at small sizes. -->
+  <rect x="18.5" y="26" width="8" height="17" rx="1.2" fill="#e2c25c"/>
+  <rect x="27.5" y="16" width="9" height="27" rx="1.2" fill="#2f3d68"/>
+  <rect x="37.5" y="28" width="8" height="15" rx="1.2" fill="#c9762f"/>
+
+  <!-- seat cushion -->
+  <rect x="5" y="41" width="54" height="9" rx="4" fill="#22684a"/>
+
+  <!-- rolled arms, in front of the cushion -->
+  <rect x="3" y="28" width="11" height="22" rx="5.5" fill="#256f4e"/>
+  <rect x="50" y="28" width="11" height="22" rx="5.5" fill="#256f4e"/>
+
+  <!-- turned legs -->
+  <rect x="11" y="49" width="5" height="8" rx="1.5" fill="#79522f"/>
+  <rect x="48" y="49" width="5" height="8" rx="1.5" fill="#79522f"/>
+</svg>

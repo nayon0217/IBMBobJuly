@@ -23,7 +23,7 @@ from app.services import chat as chat_service
 from app.services import extraction as extraction_service
 from app.services import scene as scene_service
 
-app = FastAPI(title="Manuscript Characters API", version="0.1.0")
+app = FastAPI(title="The Green Room API", version="0.1.0")
 
 # Wide-open CORS for local dev so the Vite frontend can call in. Tighten before
 # any public deployment.

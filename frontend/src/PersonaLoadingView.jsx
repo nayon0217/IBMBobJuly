@@ -32,11 +32,13 @@ export default function PersonaLoadingView({ names = [], mode = "chat", error, o
   }
 
   const label = names.length ? names.join(", ") : "your characters";
+  // Same theatre vocabulary as the extraction screen, one step further along:
+  // the company is cast, and now it is getting ready to go on.
   const messages = [
-    `Reading the manuscript for ${label}…`,
-    "Retrieving their key scenes…",
-    "Writing persona cards grounded in the text…",
-    "Almost there…",
+    "Marking up the script…",
+    "Learning their lines…",
+    "Into costume…",
+    "Waiting in the wings…",
   ];
   const message = messages[Math.min(tick, messages.length - 1)];
 
@@ -45,13 +47,13 @@ export default function PersonaLoadingView({ names = [], mode = "chat", error, o
       <div className="mc-loader-card">
         <div className="mc-spin" />
         <h2 className="mc-loader-title">
-          {mode === "scene" ? "Setting the stage" : "Getting into character"}
+          {mode === "scene" ? "Calling the company" : "Getting into character"}
         </h2>
         <p className="mc-loader-who">{label}</p>
         <p className="mc-loader-stage">{message}</p>
         <p className="mc-hint">
-          Grounding each character in the manuscript — this only happens the
-          first time you open them.
+          Each character is read out of the manuscript once. After this, they're
+          ready whenever you are.
         </p>
       </div>
     </div>
