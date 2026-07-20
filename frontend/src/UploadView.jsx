@@ -1,11 +1,16 @@
 // UploadView.jsx — Landing page. Accepts a manuscript via file upload
 // (.txt, .pdf, .docx) or paste-text, then triggers extraction.
-// Styling: "The Reading Room" (see theme.css) — a warm, book-forward hero with
-// a catalogued shelf, a slipcase upload card, and chapter-style steps.
+//
+// Styling: "The Green Room" (see theme.css). The hero is set as a theatre
+// playbill — script article over heavy roman name — above a full-bleed velvet
+// couch with the cast waiting on it (TheatreCouch). The hero holds the whole
+// viewport, so the intake form is reached only by scrolling: you see the room
+// before you're asked for anything.
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { extractTextFromFile } from "./fileText";
 import { useReveal } from "./useReveal";
+import TheatreCouch from "./TheatreCouch";
 
 const ACCEPTED = {
   "text/plain": ".txt",
@@ -15,17 +20,6 @@ const ACCEPTED = {
 };
 
 const ACCEPT_STRING = Object.values(ACCEPTED).join(",");
-
-// Decorative spines for the hero shelf — archetypes, not extracted characters
-// (the real cast is discovered only after a manuscript is processed).
-const SHELF = [
-  { n: "001", label: "The Protagonist", cls: "s1" },
-  { n: "002", label: "The Rival", cls: "s2" },
-  { n: "003", label: "The Confidante", cls: "s3" },
-  { n: "004", label: "The Beloved", cls: "s4" },
-  { n: "005", label: "The Mentor", cls: "s5" },
-  { n: "006", label: "The Narrator", cls: "s6" },
-];
 
 export default function UploadView({ onSubmit }) {
   const [mode, setMode] = useState("file"); // "file" | "paste"
@@ -37,8 +31,19 @@ export default function UploadView({ onSubmit }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [progress, setProgress] = useState(""); // human-readable status line
 
+  const [scrolled, setScrolled] = useState(false);
+
   const inputRef = useRef();
   const revealRef = useReveal();
+
+  // The cue is an invitation, not a control — once the reader has taken it,
+  // it gets out of the way.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const isFileMode = mode === "file";
   const canSubmit =
@@ -101,53 +106,71 @@ export default function UploadView({ onSubmit }) {
 
   return (
     <div className="mc-screen" ref={revealRef}>
-      <div className="mc-wrap">
-        {/* ── header ─────────────────────────────────────────────────── */}
-        <header className="mc-top">
-          <div className="mc-mark">Manuscript Characters<span className="dot">.</span></div>
-          <p className="mc-tagline">Bring the voices in your manuscript to life with AI.</p>
-        </header>
+      {/* ── hero: the bill, then the room it advertises ────────────────── */}
+      <section className="mc-theatre">
+        <div className="mc-wrap">
+          <header className="mc-top">
+            <div className="mc-mark">The Green Room</div>
+            <p className="mc-tagline">Step backstage with the characters in your manuscript.</p>
+          </header>
 
-        {/* ── hero ───────────────────────────────────────────────────── */}
-        <section className="mc-hero">
-          <div className="mc-reveal">
-            <div className="mc-chapter">
-              <span className="mc-rule" />
-              <span className="mc-eyebrow">Chapter I — The Cast</span>
-            </div>
-            <h1 className="mc-display">
-              Every manuscript is a room <em>full of voices.</em>
-            </h1>
-            <p className="mc-lede">
-              Upload your manuscript and bring your characters to life with AI —
-              talk with them one-on-one, or set them loose together in a scene.
-            </p>
-            <div className="mc-filetags">
-              <span className="mc-filetag">.TXT</span>
-              <span className="mc-filetag">.PDF</span>
-              <span className="mc-filetag">.DOCX</span>
-            </div>
-          </div>
+          <div className="mc-hero">
+            <div className="mc-playbill mc-reveal">
+              <span className="mc-eyebrow">Tonight — the cast of your manuscript</span>
 
-          <div className="mc-shelf mc-reveal" style={{ "--d": "120ms" }}>
-            <span className="mc-shelf-cap">Every cast has its shelf</span>
-            <div className="mc-spines">
-              {SHELF.map((s) => (
-                <div key={s.n} className={`mc-spine ${s.cls}`}>
-                  <small>{s.n}</small>
-                  {s.label}
+              <span className="mc-billing">The</span>
+              <h1 className="mc-headword">Green Room</h1>
+
+              <div className="mc-bill-rule">
+                <span className="mc-lozenge" />
+              </div>
+
+              <div className="mc-pron">
+                <span className="phon">[ˈɡriːn ruːm]</span>
+                <span className="pos">noun</span>
+              </div>
+
+              <div className="mc-entry-rule" />
+
+              <div className="mc-senses">
+                <div className="mc-sense">
+                  <span className="mc-sense-n">1.</span>
+                  <p>The room offstage where the cast wait before going on.</p>
                 </div>
-              ))}
+                <div className="mc-sense">
+                  <span className="mc-sense-n">2.</span>
+                  <p>
+                    Where your characters wait. <em>Go in and talk to them.</em>
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="mc-shelf-base" />
-          </div>
-        </section>
 
+            <div className="mc-reveal" style={{ "--d": "120ms" }}>
+              <span className="mc-stage-cap">Every book has a green room</span>
+              <div className="mc-stage-frame">
+                <TheatreCouch />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <a
+          href="#intake"
+          className={`mc-cue${scrolled ? " is-gone" : ""}`}
+          aria-hidden={scrolled}
+          tabIndex={scrolled ? -1 : 0}
+        >
+          <span>Submit a manuscript</span>
+          <span className="mc-cue-arrow" />
+        </a>
+      </section>
+
+      <div className="mc-wrap">
         {/* ── intake / upload ────────────────────────────────────────── */}
-        <section className="mc-section">
+        <section className="mc-section" id="intake">
           <div className="mc-sec-head mc-reveal">
-            <span className="mc-sec-num">§ 01</span>
-            <h2>Submit a manuscript to the library</h2>
+            <h2>Submit a manuscript, enter its green room</h2>
           </div>
 
           <div className="mc-hero" style={{ padding: 0, alignItems: "start" }}>
@@ -289,7 +312,7 @@ export default function UploadView({ onSubmit }) {
                   className="mc-btn mc-btn--primary mc-btn--block mc-btn--lg"
                   disabled={!canSubmit}
                 >
-                  {status === "reading" ? "Reading…" : "Process manuscript →"}
+                  {status === "reading" ? "Reading…" : "Open the green room →"}
                 </button>
               </form>
             </div>
@@ -299,22 +322,22 @@ export default function UploadView({ onSubmit }) {
               <div className="mc-step-lg mc-reveal">
                 <span className="mc-rn">i.</span>
                 <div>
-                  <h4>Deposit the text</h4>
-                  <p>Upload or paste your manuscript. Nothing leaves the shelf without your say.</p>
+                  <h4>Sign in at the stage door</h4>
+                  <p>Upload or paste your manuscript. Files are read in your browser — only the plain text is sent on.</p>
                 </div>
               </div>
               <div className="mc-step-lg mc-reveal" style={{ "--d": "90ms" }}>
                 <span className="mc-rn">ii.</span>
                 <div>
-                  <h4>The cast is catalogued</h4>
-                  <p>AI reads the whole work and extracts your characters, their aliases and the timeline.</p>
+                  <h4>The cast is called</h4>
+                  <p>AI reads the whole work and calls every character to the room, matching their aliases and marking where each one appears.</p>
                 </div>
               </div>
               <div className="mc-step-lg mc-reveal" style={{ "--d": "180ms" }}>
                 <span className="mc-rn">iii.</span>
                 <div>
-                  <h4>Bring them off the page</h4>
-                  <p>Chat with a character one-on-one, or stage several together in a live scene.</p>
+                  <h4>Knock and go in</h4>
+                  <p>Talk to one character alone, or put several on stage together and watch the scene play out.</p>
                 </div>
               </div>
             </div>

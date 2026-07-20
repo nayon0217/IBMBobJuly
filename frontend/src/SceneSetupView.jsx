@@ -123,7 +123,7 @@ export default function SceneSetupView({
 
         <div className="mc-roster-row">
           <span className="mc-roster-label">
-            Characters · {selected.size}/{characters.length}
+            In the room · {selected.size}/{characters.length}
           </span>
           {mode === "scene" && (
             <span>
@@ -136,7 +136,7 @@ export default function SceneSetupView({
 
         <div className="mc-cast-list">
           {characters.length === 0 && (
-            <p className="mc-empty-note">No characters extracted yet.</p>
+            <p className="mc-empty-note">Nobody in the room yet.</p>
           )}
           {characters.map((c) => {
             const on = selected.has(c.id);
@@ -264,8 +264,8 @@ export default function SceneSetupView({
 
           <p className="mc-ground-note">
             {mode === "chat"
-              ? "We'll build this character's persona from the manuscript when you start."
-              : "We'll build each character's persona from the manuscript when you enter the scene."}
+              ? "They'll get into character from the manuscript when you start."
+              : "Everyone gets into character from the manuscript when you enter the scene."}
           </p>
         </div>
       </main>

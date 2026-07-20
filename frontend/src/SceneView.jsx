@@ -17,10 +17,10 @@ const MAX_TURNS = 6;
 // The stage backdrop tints itself to match the scene the writer describes.
 // Each entry pairs a set of trigger words with a top→bottom gradient that
 // evokes that setting/mood. The first matching palette wins, so more specific
-// moods are listed before broader ones. `DEFAULT_STAGE_GRADIENT` is the dusk
-// tone used when nothing matches.
+// moods are listed before broader ones. `DEFAULT_STAGE_GRADIENT` is the house
+// green used when nothing matches.
 const DEFAULT_STAGE_GRADIENT =
-  "linear-gradient(180deg, #3b2f5e 0%, #6a4a6b 55%, #a97e86 100%)";
+  "linear-gradient(180deg, #24303a 0%, #3f5e4a 55%, #9aa87e 100%)";
 
 const SCENE_GRADIENTS = [
   { words: ["night", "midnight", "moon", "moonlight", "starlit", "stars", "dark"], gradient: "linear-gradient(180deg, #0b1026 0%, #1c2450 55%, #2e3b6b 100%)" },

@@ -45,7 +45,7 @@ export default function PersonaLoadingView({ names = [], mode = "chat", error, o
       <div className="mc-loader-card">
         <div className="mc-spin" />
         <h2 className="mc-loader-title">
-          {mode === "scene" ? "Preparing the stage" : "Getting into character"}
+          {mode === "scene" ? "Setting the stage" : "Getting into character"}
         </h2>
         <p className="mc-loader-who">{label}</p>
         <p className="mc-loader-stage">{message}</p>

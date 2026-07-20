@@ -6,11 +6,11 @@
 import { useEffect, useState } from "react";
 
 const STAGES = [
-  "Reading your manuscript…",
+  "Reading the script…",
   "Building the vector index…",
-  "Discovering characters…",
-  "Merging names and aliases…",
-  "Mapping the timeline…",
+  "Calling the cast…",
+  "Matching names and aliases…",
+  "Marking the running order…",
 ];
 
 export default function ProcessingView({ title, error, onBack }) {
@@ -46,7 +46,7 @@ export default function ProcessingView({ title, error, onBack }) {
       <div className="mc-loader-card">
         <div className="mc-spin" />
         <h2 className="mc-loader-title">
-          Bringing {title ? `“${title}”` : "your manuscript"} to life
+          Calling the cast of {title ? `“${title}”` : "your manuscript"}
         </h2>
         <p className="mc-loader-stage">{STAGES[stage]}</p>
 
