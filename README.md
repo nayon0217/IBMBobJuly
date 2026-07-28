@@ -17,7 +17,7 @@ Check it out here! https://thegreenroom.up.railway.app/
 1. **Upload a manuscript** — supports `.docx`, `.pdf`, and plain text.
 2. **Personas are generated** for every character who appears, grounded in the text.
 3. **Set the timeline** — choose how far into the manuscript the writer wants characters to "know" for this session.
-4. **Chat** — ask Harry about school, and he won't mention Hogwarts or magic if that hasn't happened yet in the story. Personality and emotional tone come through in how he answers regardless.
+4. **Chat** — ask anything, and the character will answer with personality and emotional tone coming through.
 5. **Or stage a scene** — give a prompt, and watch multiple characters converse. The tool surfaces their outcomes, feelings, a fleshed-out sense of the scenario, and the final exchange.
 
 ## Demo
