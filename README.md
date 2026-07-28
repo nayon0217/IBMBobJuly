@@ -10,7 +10,7 @@ time, or put several on stage together and watch what they do to each other.
 Built for the IBM Bob AI Builders Challenge (July theme: *Reimagine Creative
 Industries with AI*).
 
-Check it out here! https://thegreenroom.up.railway.app/ 
+
 
 ## How to Use
 
