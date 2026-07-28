@@ -1,88 +1,48 @@
 # The Green Room
 
-A green room is where a theatre's cast wait before going on. Upload a
+## Motivation
+
+The Green Room is a platform to help writers combat writer's block. Upload a
 manuscript and this one fills with its characters — talk to them one at a
 time, or put several on stage together and watch what they do to each other.
 Built for the IBM Bob AI Builders Challenge (July theme: *Reimagine Creative
 Industries with AI*).
 
-The magic moment: a writer sets a scene, two of their own characters play it
-out, and the tool surfaces a plot direction they hadn't thought of.
+Check it out here! https://thegreenroom.up.railway.app/ 
 
-## Why the repo is shaped this way
+## How to Use
 
-Two people, one month. The backend exposes a **fixed contract** (`/extract`,
-`/chat`, `/scene`) whose internals run on **mock data by default**. That lets
-the two tracks run in parallel with almost no blocking:
+1. **Upload a manuscript** — supports `.docx`, `.pdf`, and plain text.
+2. **Personas are generated** for every character who appears, grounded in the text.
+3. **Set the timeline** — choose how far into the manuscript the writer wants characters to "know" for this session.
+4. **Chat** — ask Harry about school, and he won't mention Hogwarts or magic if that hasn't happened yet in the story. Personality and emotional tone come through in how he answers regardless.
+5. **Or stage a scene** — give a prompt, and watch multiple characters converse. The tool surfaces their outcomes, feelings, a fleshed-out sense of the scenario, and the final exchange.
 
-- **Person A (AI/agent):** replace the mock internals in `backend/app/services/`
-  with real watsonx/Granite calls. Start with `watsonx.py`, then extraction →
-  chat → scene, in that order.
-- **Person B (product/frontend):** build the UI in `frontend/` against the live
-  endpoints with `BACKEND=mock`. Never blocked waiting on the AI work.
+## Demo
 
-The contract lives in two mirrored files — keep them in sync:
-`backend/app/schemas.py` and `frontend/src/api.js`, described in
-[`docs/API_CONTRACT.md`](docs/API_CONTRACT.md).
+(add video later)
 
-## Structure
+<img width="1167" height="662" alt="Screenshot 2026-07-28 at 12 41 39" src="https://github.com/user-attachments/assets/7f255922-4a3d-4d78-b2d1-98a7d6355889" />
+<img width="1166" height="658" alt="Screenshot 2026-07-28 at 12 42 04" src="https://github.com/user-attachments/assets/4988ef04-b32a-4fb4-a92c-e4e90df7048f" />
+<img width="1164" height="661" alt="Screenshot 2026-07-28 at 12 42 54" src="https://github.com/user-attachments/assets/e3f293ee-3042-4cc2-b0d6-33dd8c9badd2" />
+<img width="1166" height="657" alt="Screenshot 2026-07-28 at 12 43 24" src="https://github.com/user-attachments/assets/76a93e30-22c6-4c36-ad8d-1a20e624899a" />
 
-```
-backend/
-  app/
-    schemas.py         # THE CONTRACT (Pydantic models)
-    main.py            # FastAPI routes (thin)
-    config.py          # BACKEND=mock|watsonx switch
-    mock_data.py       # canned characters + responses
-    services/
-      extraction.py    # Phase 1: manuscript -> persona cards
-      chat.py          # Phase 2: single-character chat (the MVP)
-      scene.py         # Phase 3: multi-agent + narrator (the win)
-      watsonx.py       # the ONLY file that talks to IBM
-  tests/test_smoke.py  # proves the contract end to end
-frontend/
-  src/api.js           # client mirroring the contract
-  src/App.jsx          # plain dev harness — grow into the real UI
-docs/API_CONTRACT.md   # agree on this day one
-```
+## Tech Used
 
-## Run it
+### Retrieval-augmented generation — IBM Granite embeddings + Pinecone
 
-Backend:
-```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp ../.env.example ../.env        # BACKEND=mock works with no keys
-uvicorn app.main:app --reload     # http://localhost:8000/docs
-pytest                            # 5 smoke tests should pass
-```
+The manuscript is chunked in order, embedded with IBM's Granite embedding model on watsonx.ai, and indexed in a Pinecone serverless vector database. Every generation — persona grounding, chat replies, scene dialogue — is answered from passages retrieved from that index rather than the model's own memory of the book. Retrieval is capped to the writer's chosen timeline position, which is what keeps characters from knowing their own endings.
 
-Frontend:
-```bash
-cd frontend
-npm install
-npm run dev                       # http://localhost:5173
-```
+### Character extraction and persona building — IBM watsonx.ai
 
-With the backend on `mock`, the frontend harness runs the full loop
-(extract → chat → scene) using canned data — no IBM credentials required.
+Personas are built by a four-stage pipeline:
 
-## Build order (maps to the plan)
+1. **Discovery** — reads the manuscript and lists everyone who appears.
+2. **Consolidation** — merges aliases and nicknames ("Elizabeth", "Lizzy", "Miss Bennet") into one canonical character.
+3. **Ranking** — a deterministic scan ranks characters by how often they actually appear and drops background names.
+4. **Grounding** — writes the persona card (traits, motivations, voice, physical description, relationships) from retrieved passages only — never from the name alone.
 
-1. **Week 1** — Person A: `watsonx.py` + real `extraction.py`. Person B:
-   manuscript upload UI + character list.
-2. **Week 2** — Person A: real `chat.py` (grounded, in-voice). Person B: chat UI.
-   *This is the MVP that must ship.*
-3. **Week 3** — Person A: real `scene.py` (multi-agent + narrator). Person B:
-   scene-setup + conversation view. *Pair on this integration.*
-4. **Week 4** — polish, optional avatar/TTS, demo video, submission writeup.
+### 2D character generation — DiceBear
 
-**Cut line:** single-character chat must ship; multi-agent is the win; the
-avatar is disposable. If a week slips, cut from the top.
+Each persona card includes a `physical` field extracted from the manuscript. An LLM call maps that freeform description onto a fixed menu of avatar parameters — hairstyle, hair color, skin tone, facial hair, accessories, clothing — which are passed to **DiceBear** (Avataaars style) to render a deterministic SVG avatar for the character. After every line a character speaks, an expression tag is parsed off that completion and mapped onto the avatar, so the character's visible emotional state updates as a conversation or scene unfolds. 
 
-## IBM tech (name these in the submission)
-
-Granite models for extraction, persona voice, and dialogue; watsonx.ai for
-inference and embeddings; the multi-agent layer as the orchestration showcase.
-Tie each to a judging criterion in the writeup.
