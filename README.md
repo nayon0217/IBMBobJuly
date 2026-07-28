@@ -1,5 +1,7 @@
 # The Green Room - IBM Bob July Challenge
 
+_A green room is where actors go backstage in a theatre where actors rest and interact before acting. Allow your characters to do so, and learn from them._
+
 ## Motivation
 
 The Green Room is a platform to help writers combat writer's block. Upload a
@@ -20,12 +22,19 @@ Check it out here! https://thegreenroom.up.railway.app/
 
 ## Demo
 
-(add video later)
+Demo video: (add video later)
 
-<img width="1167" height="662" alt="Screenshot 2026-07-28 at 12 41 39" src="https://github.com/user-attachments/assets/7f255922-4a3d-4d78-b2d1-98a7d6355889" />
-<img width="1166" height="658" alt="Screenshot 2026-07-28 at 12 42 04" src="https://github.com/user-attachments/assets/4988ef04-b32a-4fb4-a92c-e4e90df7048f" />
-<img width="1164" height="661" alt="Screenshot 2026-07-28 at 12 42 54" src="https://github.com/user-attachments/assets/e3f293ee-3042-4cc2-b0d6-33dd8c9badd2" />
-<img width="1166" height="657" alt="Screenshot 2026-07-28 at 12 43 24" src="https://github.com/user-attachments/assets/76a93e30-22c6-4c36-ad8d-1a20e624899a" />
+<table>
+  <tr>
+    <td><img width="100%" alt="Screenshot 1" src="https://github.com/user-attachments/assets/7f255922-4a3d-4d78-b2d1-98a7d6355889" /></td>
+    <td><img width="100%" alt="Screenshot 2" src="https://github.com/user-attachments/assets/4988ef04-b32a-4fb4-a92c-e4e90df7048f" /></td>
+  </tr>
+  <tr>
+    <td><img width="100%" alt="Screenshot 3" src="https://github.com/user-attachments/assets/e3f293ee-3042-4cc2-b0d6-33dd8c9badd2" /></td>
+    <td><img width="100%" alt="Screenshot 4" src="https://github.com/user-attachments/assets/76a93e30-22c6-4c36-ad8d-1a20e624899a" /></td>
+  </tr>
+</table>
+
 
 ## Tech Used
 
@@ -38,7 +47,7 @@ The manuscript is chunked in order, embedded with IBM's Granite embedding model 
 Personas are built by a four-stage pipeline:
 
 1. **Discovery** — reads the manuscript and lists everyone who appears.
-2. **Consolidation** — merges aliases and nicknames ("Elizabeth", "Lizzy", "Miss Bennet") into one canonical character.
+2. **Consolidation** — merges aliases and nicknames (e.g. "Elizabeth", "Lizzy", "Miss Bennet") into one canonical character.
 3. **Ranking** — a deterministic scan ranks characters by how often they actually appear and drops background names.
 4. **Grounding** — writes the persona card (traits, motivations, voice, physical description, relationships) from retrieved passages only — never from the name alone.
 
