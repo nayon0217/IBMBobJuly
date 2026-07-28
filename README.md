@@ -1,4 +1,4 @@
-# The Green Room
+# The Green Room - IBM Bob July Challenge
 
 ## Motivation
 
