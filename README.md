@@ -36,7 +36,11 @@ Demo video: (add video later)
 </table>
 
 
-## Tech Used
+## Tech Stack
+
+<img width="100%" alt="Tech stack" src="greenroomstack.svg" />
+
+## Technical Highlights
 
 ### Retrieval-augmented generation — IBM Granite embeddings + Pinecone
 

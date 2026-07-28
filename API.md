@@ -130,6 +130,17 @@ Each dialogue turn's `emotion` is the speaker's facial expression for that line
 scene stage can emote per line — an actor's avatar takes on the expression of
 their most recent line.
 
+## `DELETE /session`
+Session teardown. Drops the uploaded manuscript, its chunk vectors, the roster,
+the timeline, and every cached persona card. Returns `{ "status": "cleared" }`.
+
+Idempotent, so the frontend fires it both when the writer starts over with a new
+manuscript and on tab close (via `fetch(..., { keepalive: true })`), without
+caring whether anything was uploaded. This is what backs the claim that a
+manuscript never outlives its session: `POST /extract` already replaces the
+previous manuscript, but without this endpoint the last-uploaded one would sit
+in the vector index until the *next* upload.
+
 ---
 
 ## PersonaCard

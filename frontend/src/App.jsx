@@ -3,14 +3,14 @@
 // setup they pick who to chat/stage with; entering a chat or scene grounds the
 // selected persona cards on demand (Grounding screen) before rendering.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import UploadView from "./UploadView";
 import ProcessingView from "./ProcessingView";
 import PersonaLoadingView from "./PersonaLoadingView";
 import ChatView from "./ChatView";
 import SceneSetupView from "./SceneSetupView";
 import SceneView from "./SceneView";
-import { extract, personas } from "./api";
+import { endSession, extract, personas } from "./api";
 
 export default function App() {
   // upload | processing | sceneSetup | grounding | chat | scene
@@ -31,6 +31,15 @@ export default function App() {
   const [groundingNames, setGroundingNames] = useState([]);
   const [groundError, setGroundError] = useState("");
 
+  // A manuscript must not outlive the session that uploaded it, and closing the
+  // tab is the usual way a session ends — so tear down server-side state there
+  // too, not just when the writer explicitly starts over.
+  useEffect(() => {
+    const teardown = () => endSession();
+    window.addEventListener("beforeunload", teardown);
+    return () => window.removeEventListener("beforeunload", teardown);
+  }, []);
+
   async function handleSubmit(text, manuscriptTitle) {
     setTitle(manuscriptTitle);
     setWordCount(text ? text.trim().split(/\s+/).filter(Boolean).length : 0);
@@ -48,6 +57,7 @@ export default function App() {
   }
 
   function reset() {
+    endSession();
     setPhase("upload");
     setResult(null);
     setTitle("");

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Green Room</title>
+
+    <!-- SVG first for browsers that take it; the PNGs cover the rest. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="apple-touch-icon" href="/favicon-180.png">
+    <meta name="theme-color" content="#f3efe4">
+
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      body { margin: 0; }
+    </style>
+  <style type="text/css" data-vite-dev-id="/Users/nayon/Downloads/manuscript-characters/frontend/src/theme.css">/* theme.css — "The Green Room" design system.
+   A warm, book-forward literary identity (paper, green, gilt, serif) that
+   descends into a deep, gradient-lit espresso "atrium" for the staged product
+   surfaces. Green is a highlight, never a ground: it takes the role oxblood
+   used to play on buttons, active tabs, links and focus rings, while the paper
+   world stays warm. All texture is self-contained (inline SVG turbulence), all
+   motion is guarded by prefers-reduced-motion. Components reference these
+   tokens/classes instead of hard-coding hexes so the app stays consistent. */
+
+:root {
+  /* ── warm paper world ── */
+  --paper:      #f3efe4;
+  --paper-2:    #e8e1d1;
+  --card:       #fbf8f0;
+  --ink:        #241f17;
+  --ink-soft:   #5a5142;
+  --ink-mute:   #8f8672;
+  --line:       #d8d0bd;
+  --line-soft:  #e3dccb;
+
+  /* ── accents ── */
+  --accent:      #2f6042;  /* green — the highlight, on paper grounds */
+  --accent-deep: #21462f;
+  --accent-warm: #7fae8c;  /* lifted green, for dark grounds */
+  --gild:        #b6893f;  /* warm gilt */
+  --curtain:     #7a2e2b;  /* the old oxblood, kept for destructive actions */
+
+  /* ── theatre velvet (the hero couch + playbill accents) ── */
+  --velvet:      #9b2230;
+  --velvet-hi:   #c8434e;
+  --velvet-lo:   #4e0d16;
+
+  /* ── espresso atrium (committed-dark region, warm not blue) ── */
+  --atrium-1:    #2a2018;
+  --atrium-2:    #1c140c;
+  --atrium-3:    #12100b;
+  --atrium-card: #241b13;
+  --atrium-line: #3d3021;
+  --atrium-ink:  #efe7d6;
+  --atrium-soft: #c1b39a;
+  --atrium-mute: #8a7c64;
+
+  /* ── status ── */
+  --success:  #2f7d5b;
+  --danger:   #a83228;
+  --danger-bg:#f6e7e2;
+
+  /* ── shape ── */
+  --radius:      8px;
+  --radius-lg:   12px;
+  --radius-pill: 999px;
+  --shadow-lg: 0 34px 70px -34px rgba(36,25,15,.55);
+  --shadow-md: 0 18px 40px -22px rgba(36,25,15,.5);
+  --shadow-sm: 0 6px 18px -10px rgba(36,25,15,.4);
+
+  /* ── type ── */
+  --serif: "Hoefler Text", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans:  ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  /* The second voice. A playbill sets the article in a flowing script above the
+     billed name, so "The" is script and "Green Room" is the heavy roman. Where
+     no script face exists the chain lands on an italic serif, which still reads
+     as a deliberate contrast rather than a fallback. */
+  --script: "Snell Roundhand", "Apple Chancery", "Segoe Script", "Brush Script MT", "Lucida Handwriting", cursive;
+
+  /* ── self-contained paper texture (inline SVG turbulence, no external files) ──
+     Two layers: a coarse fibre at low frequency, and the original fine grain.
+     Together they read as laid paper rather than screen noise. */
+  --paper-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  --paper-fibre: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.028' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.55'/%3E%3C/svg%3E");
+
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background:
+    var(--paper-fibre),
+    var(--paper-noise),
+    linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  background-blend-mode: soft-light, soft-light, normal;
+  background-size: 260px 260px, 150px 150px, auto;
+  background-attachment: fixed;
+}
+
+/* The house lights — two warm washes that drift across the paper. Ambient and
+   cursor-independent; the reduced-motion block below stops them. */
+body::before {
+  content: ""; position: fixed; inset: -20%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(38% 30% at 76% 12%, color-mix(in srgb, var(--gild) 20%, transparent), transparent 62%),
+    radial-gradient(34% 28% at 14% 42%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%);
+  animation: mc-lights 34s ease-in-out infinite alternate;
+}
+#root { position: relative; z-index: 1; }
+
+::selection { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+
+/* Warm, slim scrollbars to fit the paper aesthetic. */
+* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink-mute) 55%, transparent); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--ink-mute); background-clip: padding-box; }
+
+h1, h2, h3, h4 { margin: 0; font-family: var(--serif); font-weight: 600; letter-spacing: -.01em; text-wrap: balance; }
+
+button, input, textarea { font-family: inherit; }
+
+/* ── keyframes ─────────────────────────────────────────────────────────── */
+@keyframes mc-fade-up   { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes mc-spin      { to { transform: rotate(360deg); } }
+@keyframes mc-pulse     { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+@keyframes mc-float     { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes mc-pop       { 0% { opacity: 0; transform: translateY(8px) scale(.8); } 60% { opacity: 1; transform: translateY(-2px) scale(1.04); } 100% { opacity: 1; transform: none; } }
+@keyframes mc-typing    { 0%,70%,100% { transform: translateY(0); opacity: .35; } 35% { transform: translateY(-5px); opacity: 1; } }
+@keyframes mc-bob       { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes mc-ink       { 0% { stroke-dashoffset: 300; } 100% { stroke-dashoffset: 0; } }
+@keyframes mc-lights    { 0% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-3%,2.5%,0) scale(1.06); } 100% { transform: translate3d(2.5%,-2%,0) scale(1.02); } }
+
+/* ── screen entrance + scroll reveal ───────────────────────────────────── */
+.mc-screen { animation: mc-fade-up .5s var(--ease) both; }
+
+.mc-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); transition-delay: var(--d, 0ms); will-change: opacity, transform; }
+.mc-reveal.mc-in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  .mc-reveal { opacity: 1; transform: none; }
+}
+
+/* ── layout helpers ────────────────────────────────────────────────────── */
+.mc-wrap { max-width: 1160px; margin: 0 auto; padding: 0 clamp(1.1rem, 4vw, 3rem); }
+.mc-eyebrow { font-family: var(--sans); font-size: .7rem; letter-spacing: .24em; text-transform: uppercase; color: var(--gild); font-weight: 600; }
+.mc-sans { font-family: var(--sans); }
+
+/* ── buttons ───────────────────────────────────────────────────────────── */
+.mc-btn {
+  font-family: var(--sans); font-size: .9rem; font-weight: 600; letter-spacing: .01em;
+  border: 1px solid transparent; border-radius: var(--radius); padding: .6rem 1.1rem;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  transition: background .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease), transform .15s var(--ease), box-shadow .2s var(--ease);
+}
+.mc-btn:active { transform: translateY(1px); }
+.mc-btn:disabled { cursor: not-allowed; opacity: .55; }
+
+.mc-btn--primary { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-sm); }
+.mc-btn--primary:hover:not(:disabled) { background: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.mc-btn--accent { background: var(--accent); color: #f7efe6; }
+.mc-btn--accent:hover:not(:disabled) { background: var(--accent-deep); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.mc-btn--warm { background: linear-gradient(180deg,var(--accent-warm),#a4552f); color: #fff2e8; box-shadow: 0 8px 18px -8px rgba(192,106,63,.6); }
+.mc-btn--warm:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(192,106,63,.7); }
+
+.mc-btn--ghost { background: transparent; border-color: var(--line); color: var(--ink-soft); }
+.mc-btn--ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+.mc-btn--ghost-dark { background: transparent; border-color: var(--atrium-line); color: var(--atrium-soft); }
+.mc-btn--ghost-dark:hover:not(:disabled) { border-color: var(--accent-warm); color: var(--accent-warm); }
+
+.mc-btn--pill { border-radius: var(--radius-pill); }
+.mc-btn--block { width: 100%; }
+.mc-btn--lg { padding: .82rem 1.4rem; font-size: 1rem; }
+
+/* focus visibility everywhere */
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+/* ── inputs ────────────────────────────────────────────────────────────── */
+.mc-input, .mc-textarea {
+  width: 100%; font-family: var(--serif); font-size: 1rem; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: .66rem .85rem; outline: none; transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.mc-input:focus, .mc-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
+.mc-textarea { resize: vertical; line-height: 1.55; }
+
+/* ── tabs / segmented ──────────────────────────────────────────────────── */
+.mc-tabs { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-family: var(--sans); }
+.mc-tab { font-size: .82rem; padding: .52rem 1.1rem; background: transparent; border: 0; color: var(--ink-soft); cursor: pointer; transition: background .2s var(--ease), color .2s var(--ease); }
+.mc-tab:hover:not(.is-on) { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.mc-tab.is-on { background: var(--accent); color: #f7efe6; }
+
+/* ── generic section head ──────────────────────────────────────────────── */
+.mc-section { padding: clamp(2.6rem,6vw,4.6rem) 0; }
+.mc-sec-head { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2rem; }
+.mc-sec-head h2 { font-size: clamp(1.8rem,3.2vw,2.7rem); }
+/* the second voice again, closing the invitation */
+.mc-sec-head h2 em { font-family: var(--script); font-style: normal; font-size: 1.15em; color: var(--velvet); }
+
+/* ── top bar / wordmark ────────────────────────────────────────────────── */
+.mc-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.35rem 0; border-bottom: 1px solid var(--line); }
+.mc-mark { font-family: var(--serif); font-size: 1.35rem; letter-spacing: -.01em; font-weight: 600; }
+.mc-tagline { font-family: var(--sans); font-size: .85rem; color: var(--ink-soft); margin: 0; }
+
+/* ── two-column band (reused by the intake section) ────────────────────── */
+/* Near-even split: the left column only needs enough width to keep "Green Room"
+   on one line, and everything spare goes to the stage. */
+.mc-hero { display: grid; grid-template-columns: 1.04fr .96fr; gap: clamp(1.4rem,3vw,2.8rem); align-items: center; padding: clamp(2.4rem,6vw,4.4rem) 0 clamp(2rem,4vw,3rem); }
+.mc-chapter { display: inline-flex; align-items: center; gap: .7rem; margin-bottom: 1.3rem; }
+.mc-rule { width: 34px; height: 1px; background: var(--gild); }
+
+/* ── the theatre hero ──────────────────────────────────────────────────── */
+/* Holds the full viewport so the bill and the couch are the only things on
+   screen at rest; the intake section below is reachable only by scrolling. */
+.mc-theatre { position: relative; min-height: 100svh; display: flex; flex-direction: column; overflow: hidden; }
+.mc-theatre > .mc-wrap { flex: 1; display: flex; flex-direction: column; }
+.mc-theatre .mc-hero { flex: 1; align-items: center; padding: clamp(1rem,3vh,2.4rem) 0 clamp(2.5rem,7vh,4rem); }
+
+/* ── the playbill lockup ───────────────────────────────────────────────── */
+/* Script article over heavy roman name — the two voices the bill is set in.
+   Set flush left, so the name reads as a masthead rather than a poster. */
+.mc-playbill { position: relative; z-index: 2; }
+.mc-playbill .mc-eyebrow { display: block; margin-bottom: clamp(.8rem, 2.4vh, 1.5rem); }
+.mc-billing { display: block; font-family: var(--script); font-size: clamp(1.9rem, 4vw, 3.1rem); line-height: .8;
+  color: var(--velvet); margin: 0 0 clamp(-.7rem, -1vw, -.3rem) .12em; transform: rotate(-3deg); transform-origin: left bottom; }
+
+/* Specificity note: the global `h1` rule sets `text-wrap: balance`, which is a
+   shorthand for the same `text-wrap-mode` longhand as `white-space`. This
+   selector has to outrank it or the headword wraps onto two lines.
+
+   The padding/margin pair is not spacing — it is what keeps the caps intact.
+   `background-clip: text` paints only inside the background box, and a
+   line-height below 1 pulls that box in tighter than the ascenders, so the tops
+   of G and R fell outside it and rendered as nothing. The padding grows the
+   paint area; the equal negative margin cancels its effect on layout. */
+.mc-wrap .mc-headword {
+  font-size: clamp(2.5rem, 6.6vw, 5.7rem); line-height: .88; letter-spacing: -.042em; font-weight: 700;
+  padding: .2em 0 .06em; margin: -.2em 0 -.06em;
+  white-space: nowrap; text-wrap: nowrap;
+  background: linear-gradient(178deg, var(--ink) 30%, #4b3d2a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* gilt rule with a lozenge, the way a bill divides its billing */
+.mc-bill-rule { display: flex; align-items: center; gap: .8rem; margin: clamp(.9rem,2vh,1.4rem) 0 clamp(1rem,2.2vh,1.5rem); max-width: 22rem; }
+.mc-bill-rule::before { content: ""; height: 1px; flex: 0 0 2.2rem; background: var(--gild); }
+.mc-bill-rule::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, var(--gild), transparent); }
+.mc-lozenge { width: 7px; height: 7px; background: var(--gild); transform: rotate(45deg); flex-shrink: 0; }
+
+/* ── the dictionary entry ──────────────────────────────────────────────── */
+/* The name, defined. Sense 2 is where the definition turns into the product. */
+.mc-pron { display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap; font-family: var(--serif); font-size: 1.08rem; margin-bottom: 1rem; }
+.mc-pron .phon { color: var(--accent); letter-spacing: .01em; }
+.mc-pron .pos { font-style: italic; color: var(--ink-mute); }
+.mc-entry-rule { height: 1px; max-width: 38ch; margin-bottom: 1.4rem; background: linear-gradient(90deg, var(--accent) 0%, var(--line) 78%); }
+.mc-senses { display: grid; gap: 1rem; max-width: 38ch; }
+.mc-sense { display: grid; grid-template-columns: auto 1fr; gap: .8rem; align-items: baseline; }
+.mc-sense-n { font-family: var(--serif); font-size: 1rem; color: var(--ink-mute); font-variant-numeric: oldstyle-nums tabular-nums; }
+.mc-sense p { font-size: clamp(1.05rem,1.5vw,1.2rem); line-height: 1.5; color: var(--ink-soft); margin: 0; }
+.mc-sense p em { font-style: italic; color: var(--accent); }
+
+/* ── the stage ─────────────────────────────────────────────────────────── */
+/* A framed little theatre standing where the bookcase used to. The aspect
+   ratio matches the SVG viewBox, so the artwork is never cropped or letterboxed. */
+.mc-stage-frame { position: relative; aspect-ratio: 560 / 495; border-radius: 6px; overflow: hidden;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(36,25,15,.14); }
+.tc { display: block; width: 100%; height: 100%; }
+.mc-stage-cap { display: block; text-align: right; margin-bottom: .7rem; font-family: var(--sans); font-size: .62rem;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--ink-mute); }
+
+/* the spines: same lean and lift they had on the shelf */
+.tc-book { cursor: default; }
+.tc-book-lift { transition: transform .3s var(--ease); }
+.tc-book:hover .tc-book-lift { transform: translateY(-12px); }
+.tc-book-title { font-family: var(--serif); letter-spacing: .01em; }
+.tc-book-no { font-family: var(--sans); font-size: 6.5px; letter-spacing: .12em; }
+.tc-fo-label { font-family: var(--sans); font-size: 5.4px; letter-spacing: .18em; fill: rgba(233,226,208,.62); }
+.tc-fo-title { font-family: var(--serif); font-size: 16px; fill: #efe7d6; }
+.tc-fo-sub { font-family: var(--sans); font-size: 5px; letter-spacing: .12em; fill: rgba(233,226,208,.5); }
+.tc-spot { animation: mc-lamp 7s ease-in-out infinite alternate; transform-origin: center; }
+@keyframes mc-lamp { from { opacity: .82; } to { opacity: 1; } }
+
+/* ── scroll cue ────────────────────────────────────────────────────────── */
+/* Sits on paper now, not on the dark stage, so it takes ink colours. */
+.mc-cue { position: absolute; left: 50%; bottom: clamp(.8rem,2.5vh,1.6rem); transform: translateX(-50%); z-index: 3;
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+  font-family: var(--sans); font-size: .62rem; font-weight: 700; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--ink-mute); text-decoration: none; transition: opacity .5s var(--ease), transform .5s var(--ease), color .2s var(--ease); }
+.mc-cue:hover { color: var(--accent); }
+.mc-cue.is-gone { opacity: 0; transform: translateX(-50%) translateY(10px); pointer-events: none; }
+.mc-cue-arrow { width: 1px; height: 30px; background: linear-gradient(180deg, transparent, var(--gild)); animation: mc-float 2.6s ease-in-out infinite; }
+
+/* ── slipcase (upload / paper card) ────────────────────────────────────── */
+.mc-slipcase { position: relative; border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 1.8rem 1.8rem 2rem;
+  background: var(--paper-fibre), var(--paper-noise), linear-gradient(180deg, color-mix(in srgb,#fff 6%, var(--card)) 0%, var(--card) 100%);
+  background-blend-mode: soft-light, soft-light, normal; background-size: 260px 260px, 150px 150px, auto; }
+.mc-slipcase::before { content: ""; position: absolute; top: 12px; right: 12px; width: 20px; height: 20px; border-top: 1px solid var(--gild); border-right: 1px solid var(--gild); opacity: .7; }
+.mc-slipcase::after { content: ""; position: absolute; bottom: 12px; left: 12px; width: 20px; height: 20px; border-bottom: 1px solid var(--gild); border-left: 1px solid var(--gild); opacity: .7; }
+.mc-slip-title { font-size: 1.35rem; margin-bottom: 1.15rem; }
+
+.mc-field { display: block; margin-bottom: 1.15rem; }
+.mc-label { display: block; font-family: var(--sans); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: .45rem; }
+.mc-opt { text-transform: none; letter-spacing: 0; }
+
+.mc-drop { border: 1.5px dashed var(--line); border-radius: var(--radius); text-align: center; cursor: pointer; padding: 2rem 1rem;
+  background: linear-gradient(180deg, var(--paper), color-mix(in srgb, var(--accent) 4%, var(--paper)));
+  transition: border-color .2s var(--ease), background .2s var(--ease), transform .15s var(--ease); }
+.mc-drop:hover { border-color: var(--accent); transform: translateY(-2px); }
+.mc-drop.is-drag { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--paper)); }
+.mc-drop.has-file { border-style: solid; border-color: var(--success); background: color-mix(in srgb, var(--success) 8%, var(--paper)); text-align: left; cursor: default; }
+.mc-drop-up { font-size: 1.8rem; color: var(--ink-mute); }
+.mc-drop p { margin: .55rem 0 .25rem; font-size: .95rem; color: var(--ink-soft); }
+.mc-browse { color: var(--accent); text-decoration: underline; }
+.mc-fmt { font-family: var(--sans); font-size: .66rem; letter-spacing: .12em; color: var(--ink-mute); margin-top: .5rem; }
+.mc-fileinfo { display: flex; align-items: center; gap: .75rem; }
+.mc-filename { font-weight: 600; font-size: .95rem; word-break: break-all; }
+.mc-filesize { font-family: var(--sans); color: var(--ink-soft); font-size: .78rem; }
+.mc-remove { margin-left: auto; background: none; border: none; cursor: pointer; color: var(--ink-mute); font-size: 1rem; flex-shrink: 0; padding: .25rem; transition: color .2s var(--ease); }
+.mc-remove:hover { color: var(--danger); }
+.mc-charcount { display: block; text-align: right; font-family: var(--sans); font-size: .72rem; color: var(--ink-mute); margin-top: .35rem; }
+.mc-status { margin: 0; font-family: var(--sans); font-size: .85rem; color: var(--ink-soft); }
+.mc-error { margin: 0; font-family: var(--sans); font-size: .85rem; color: var(--danger); background: var(--danger-bg); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); border-radius: var(--radius); padding: .55rem .8rem; }
+
+/* ── chapters / how it works ───────────────────────────────────────────── */
+.mc-chapters { display: grid; gap: 0; }
+.mc-step-lg { display: grid; grid-template-columns: auto 1fr; gap: 1.1rem; align-items: baseline; padding: 1.2rem 0; border-bottom: 1px solid var(--line-soft); }
+.mc-step-lg:first-child { padding-top: 0; }
+.mc-step-lg:last-child { border-bottom: 0; }
+.mc-rn { font-family: var(--serif); font-size: 2.1rem; font-style: italic; color: var(--accent); line-height: 1; }
+.mc-step-lg h4 { font-size: 1.2rem; margin-bottom: .2rem; }
+.mc-step-lg p { margin: 0; font-family: var(--sans); font-size: .9rem; color: var(--ink-soft); line-height: 1.55; }
+
+/* ── loaders (processing / grounding) ──────────────────────────────────── */
+.mc-loader-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+.mc-loader-card { position: relative; width: 100%; max-width: 480px; text-align: center; border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 2.6rem 2.4rem;
+  background: var(--paper-noise), linear-gradient(180deg, color-mix(in srgb,#fff 6%, var(--card)) 0%, var(--card) 100%);
+  background-blend-mode: overlay, normal; background-size: 150px 150px, auto; }
+.mc-loader-card::before { content: ""; position: absolute; top: 12px; right: 12px; width: 18px; height: 18px; border-top: 1px solid var(--gild); border-right: 1px solid var(--gild); opacity: .7; }
+.mc-loader-card::after { content: ""; position: absolute; bottom: 12px; left: 12px; width: 18px; height: 18px; border-bottom: 1px solid var(--gild); border-left: 1px solid var(--gild); opacity: .7; }
+.mc-spin { width: 46px; height: 46px; margin: 0 auto 1.3rem; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: mc-spin .9s linear infinite; }
+.mc-loader-title { font-size: 1.4rem; margin: 0 0 .2rem; }
+.mc-loader-who { font-family: var(--sans); margin: 0 0 1.1rem; color: var(--ink-mute); font-size: .85rem; font-weight: 600; }
+.mc-loader-stage { margin: 0 0 1.6rem; font-family: var(--sans); color: var(--accent); font-weight: 600; font-size: .92rem; animation: mc-pulse 1.6s ease-in-out infinite; }
+.mc-steps { text-align: left; display: flex; flex-direction: column; gap: .65rem; max-width: 320px; margin: 0 auto; }
+.mc-step-row { display: flex; align-items: center; gap: .65rem; }
+.mc-step-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); color: #fff; font-size: .7rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease); }
+.mc-step-dot.is-done { background: var(--success); border-color: var(--success); }
+.mc-step-dot.is-active { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.mc-step-label { font-family: var(--sans); font-size: .85rem; color: var(--ink-mute); transition: color .3s var(--ease); }
+.mc-step-label.is-active { color: var(--ink); }
+.mc-hint { margin: 1.8rem 0 0; font-family: var(--sans); font-size: .8rem; color: var(--ink-mute); }
+.mc-err-icon { font-size: 2rem; color: var(--danger); margin-bottom: .5rem; }
+.mc-err-title { font-size: 1.25rem; margin: 0 0 .5rem; }
+.mc-err-text { font-family: var(--sans); color: var(--ink-soft); font-size: .9rem; margin: 0 0 1.5rem; word-break: break-word; }
+
+/* ── the espresso atrium (setup + scene surfaces) ──────────────────────── */
+.mc-atrium { position: relative; color: var(--atrium-ink);
+  background:
+    var(--paper-noise),
+    radial-gradient(90% 70% at 50% -6%, rgba(182,137,63,.16), transparent 60%),
+    radial-gradient(120% 90% at 50% 120%, rgba(122,46,43,.22), transparent 62%),
+    linear-gradient(180deg, var(--atrium-1) 0%, var(--atrium-2) 55%, var(--atrium-3) 100%);
+  background-blend-mode: overlay, normal, normal, normal;
+  background-size: 150px 150px, auto, auto, auto; }
+
+/* medallion (initials avatar) */
+.mc-medallion { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--serif); color: #f7f1e5; flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.22), 0 4px 10px rgba(0,0,0,.35); }
+
+/* ── setup shell ───────────────────────────────────────────────────────── */
+.mc-setup-shell { display: flex; height: 100vh; overflow: hidden; }
+.mc-roster { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; padding: 1.25rem 0; overflow: hidden; color: var(--atrium-ink);
+  border-right: 1px solid var(--atrium-line);
+  background: var(--paper-noise), linear-gradient(180deg, var(--atrium-1), var(--atrium-3));
+  background-blend-mode: overlay, normal; background-size: 150px 150px, auto; }
+.mc-roster-head { padding: 0 1.25rem 1rem; }
+.mc-roster-title { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; line-height: 1.3; }
+.mc-roster-meta { font-family: var(--sans); font-size: .72rem; color: var(--atrium-mute); margin-top: .2rem; }
+.mc-roster-row { display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem .6rem; }
+.mc-roster-label { font-family: var(--sans); font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--atrium-mute); }
+.mc-link { background: none; border: none; color: var(--accent-warm); font-family: var(--sans); font-size: .72rem; cursor: pointer; padding: 0; transition: color .2s var(--ease); }
+.mc-link:hover { color: #e0a06a; }
+.mc-dot-sep { color: var(--atrium-line); font-size: .72rem; margin: 0 .25rem; }
+.mc-cast-list { flex: 1; overflow-y: auto; padding: .35rem .6rem; }
+.mc-cast-row { display: flex; align-items: center; gap: .6rem; width: 100%; padding: .5rem .65rem; border-radius: 8px; border: none; background: none; color: inherit; cursor: pointer; text-align: left; margin-bottom: .1rem; transition: background .18s var(--ease), transform .15s var(--ease); }
+.mc-cast-row:hover { background: rgba(255,255,255,.05); transform: translateX(2px); }
+.mc-cast-row.is-on { background: rgba(255,255,255,.07); }
+.mc-check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--atrium-line); display: flex; align-items: center; justify-content: center; font-size: .62rem; color: #241b13; flex-shrink: 0; transition: background .18s var(--ease), border-color .18s var(--ease); }
+.mc-cast-row.is-on .mc-check { background: var(--accent-warm); border-color: var(--accent-warm); }
+.mc-cast-name { font-family: var(--serif); font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-empty-note { font-family: var(--sans); color: var(--atrium-mute); font-size: .8rem; padding: .5rem .65rem; }
+
+.mc-setup-main { flex: 1; overflow: auto; display: flex; padding: clamp(1.5rem,4vw,3rem); }
+.mc-panel { max-width: 580px; width: 100%; margin: 0 auto; align-self: flex-start; }
+.mc-toprow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 2.5rem; }
+.mc-modes { display: inline-flex; background: color-mix(in srgb, var(--ink) 8%, var(--paper)); border-radius: var(--radius); padding: 3px; gap: 2px; }
+.mc-mode { background: none; border: 0; border-radius: 6px; padding: .42rem .95rem; font-family: var(--sans); font-size: .82rem; font-weight: 600; color: var(--ink-soft); cursor: pointer; transition: background .2s var(--ease), color .2s var(--ease); }
+.mc-mode:hover:not(.is-on) { color: var(--ink); }
+.mc-mode.is-on { background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); }
+.mc-heading { font-size: clamp(1.8rem,3vw,2.4rem); }
+.mc-subhead { margin: .4rem 0 1.5rem; color: var(--ink-mute); font-family: var(--sans); font-size: .92rem; }
+.mc-avatar-row { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.9rem; flex-wrap: wrap; }
+.mc-big-avatar { width: 46px; height: 46px; font-size: .92rem; font-weight: 600; transition: transform .2s var(--ease); }
+.mc-big-avatar:hover { transform: translateY(-3px) scale(1.05); }
+.mc-add-avatar { width: 46px; height: 46px; border-radius: 50%; border: 1.5px dashed var(--line); color: var(--ink-mute); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.mc-field-block { margin-bottom: 1.6rem; }
+.mc-field-label { display: block; font-family: var(--sans); font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: .7rem; }
+.mc-readout { font-family: var(--serif); font-style: italic; font-size: .95rem; color: var(--ink); margin-top: .55rem; line-height: 1.5; }
+.mc-timeline-sub { font-family: var(--sans); font-size: .72rem; color: var(--ink-mute); margin-top: .3rem; letter-spacing: .03em; }
+.mc-ground-note { margin-top: 1rem; font-family: var(--sans); font-size: .78rem; color: var(--ink-mute); line-height: 1.5; }
+
+/* range slider (light + dark contexts) */
+.mc-slider { width: 100%; accent-color: var(--accent); cursor: pointer; margin: .3rem 0; }
+.mc-slider.on-dark { accent-color: var(--accent-warm); }
+
+/* ── scene stage ───────────────────────────────────────────────────────── */
+.mc-scene-shell { display: flex; flex-direction: column; height: 100vh; }
+.mc-scene-bar { display: flex; align-items: center; gap: 1rem; padding: .8rem 1.25rem; flex-shrink: 0; color: var(--atrium-ink); border-bottom: 1px solid var(--atrium-line);
+  background: linear-gradient(180deg, var(--atrium-1), var(--atrium-2)); }
+.mc-scene-title { font-family: var(--serif); font-weight: 600; font-size: 1rem; }
+.mc-chips { display: flex; gap: .4rem; flex-wrap: wrap; margin-left: auto; font-family: var(--sans); }
+.mc-chip { display: inline-flex; align-items: center; gap: .35rem; border: 1px solid var(--atrium-line); border-radius: 999px; padding: .2rem .6rem; font-size: .68rem; font-weight: 600; color: var(--atrium-soft); background: rgba(255,255,255,.03); }
+.mc-chip-dot { width: 7px; height: 7px; border-radius: 50%; }
+.mc-stage-wrap { flex: 1; overflow: auto; padding: 1rem 1.25rem; display: flex; flex-direction: column; }
+.mc-stage { flex: 1; min-height: 440px; border-radius: var(--radius-lg); position: relative; display: flex; align-items: flex-end; justify-content: space-around; gap: 1.3rem; flex-wrap: wrap; padding: 2.6rem 2rem 3rem; overflow: hidden; transition: background .8s ease; }
+.mc-stage-label { position: absolute; top: 1.1rem; left: 0; right: 0; text-align: center; font-family: var(--sans); font-size: .64rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+.mc-stage-hint { position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); text-align: center; font-family: var(--serif); font-style: italic; color: rgba(255,255,255,.6); font-size: 1rem; padding: 0 2rem; margin: 0; }
+.mc-actors { display: flex; align-items: flex-end; justify-content: space-around; width: 100%; gap: 1.5rem; flex-wrap: wrap; }
+.mc-actor { display: flex; flex-direction: column; align-items: center; max-width: 230px; }
+.mc-bubble { position: relative; color: #241f17; border-radius: var(--radius); padding: .8rem .95rem; font-family: var(--serif); font-size: 1rem; line-height: 1.5; max-width: 240px; text-align: center; margin-bottom: .35rem;
+  box-shadow: 0 14px 30px -8px rgba(0,0,0,.55);
+  background: var(--paper-noise), linear-gradient(180deg,#fbf7ee,#f1ebde); background-blend-mode: overlay, normal; background-size: 120px 120px, auto;
+  animation: mc-pop .3s var(--ease); }
+.mc-bubble-tail { width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 9px solid #f1ebde; margin-bottom: .75rem; }
+.mc-bubble-spacer { height: 40px; margin-bottom: .35rem; }
+.mc-typing { display: inline-flex; align-items: center; gap: 4px; height: 8px; }
+.mc-typing-dot { width: 7px; height: 7px; border-radius: 50%; background: #8a6a52; display: inline-block; animation: mc-typing 1.1s ease-in-out infinite; }
+.mc-actor-avatar { border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,.72); box-shadow: 0 12px 26px rgba(0,0,0,.5);
+  width: 96px; height: 96px; transition: width .35s var(--ease), height .35s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease); }
+.mc-actor-avatar.idle { width: 132px; height: 132px; }
+.mc-actor-avatar.speaking { border-color: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.22), 0 8px 20px rgba(0,0,0,.35); animation: mc-bob 1.2s ease-in-out infinite; }
+.mc-actor-name { margin-top: .6rem; color: #fff; font-family: var(--serif); font-size: .88rem; font-weight: 600; }
+.mc-empty-stage { color: rgba(255,255,255,.7); font-family: var(--serif); font-style: italic; }
+.mc-scene-error { color: #ffb4a6; font-family: var(--sans); font-size: .85rem; text-align: center; margin-top: .75rem; }
+
+/* aftermath / colophon */
+.mc-colophon { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; border: 1px solid var(--atrium-line); border-radius: var(--radius-lg); padding: 1.5rem clamp(1rem,3vw,1.8rem) 1.7rem;
+  background: var(--atrium-card); box-shadow: var(--shadow-md); }
+.mc-colophon h4 { font-family: var(--sans); font-size: .66rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gild); margin-bottom: .7rem; }
+.mc-colophon .summary { font-family: var(--serif); font-size: 1.05rem; line-height: 1.6; color: var(--atrium-ink); margin: 0; }
+.mc-feel { display: flex; gap: .75rem; align-items: flex-start; margin-bottom: 1rem; }
+.mc-feel:last-child { margin-bottom: 0; }
+.mc-feel-name { font-family: var(--serif); font-weight: 700; font-size: .92rem; color: var(--atrium-ink); }
+.mc-feel-text { font-family: var(--serif); font-style: italic; font-size: .94rem; color: var(--atrium-soft); }
+
+/* composer (shared by scene + chat) */
+.mc-composer { display: flex; gap: .6rem; padding: 1rem 1.25rem; flex-shrink: 0; border-top: 1px solid var(--atrium-line);
+  background: linear-gradient(180deg, var(--atrium-2), var(--atrium-3)); }
+.mc-composer .mc-input { background: #17110b; border-color: var(--atrium-line); color: var(--atrium-ink); border-radius: var(--radius-pill); padding: .75rem 1.1rem; }
+.mc-composer .mc-input::placeholder { color: var(--atrium-mute); }
+.mc-composer .mc-input:focus { border-color: var(--accent-warm); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-warm) 18%, transparent); }
+
+/* ── chat ──────────────────────────────────────────────────────────────── */
+.mc-chat-shell { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.mc-chat-head { display: flex; align-items: center; gap: .9rem; padding: .9rem 1.5rem; flex-shrink: 0; color: var(--atrium-ink); border-bottom: 1px solid var(--atrium-line);
+  background: linear-gradient(180deg, var(--atrium-1), var(--atrium-2)); }
+.mc-chat-name { font-family: var(--serif); font-weight: 700; font-size: 1.05rem; }
+.mc-chat-sub { font-family: var(--sans); font-size: .74rem; color: var(--atrium-mute); }
+.mc-chat-body { flex: 1; display: flex; overflow: hidden; }
+.mc-avatar-panel { width: 38%; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 1.5rem 1.25rem 1.25rem; position: relative; gap: .5rem; color: var(--atrium-ink);
+  background: var(--paper-noise), radial-gradient(80% 60% at 50% 120%, rgba(182,137,63,.14), transparent 60%), linear-gradient(180deg, var(--atrium-1), var(--atrium-3));
+  background-blend-mode: overlay, normal, normal; background-size: 150px 150px, auto, auto; border-right: 1px solid var(--atrium-line); }
+.mc-big-portrait { width: min(280px, 74%); height: min(280px, 74%); flex-shrink: 0; filter: drop-shadow(0 16px 26px rgba(0,0,0,.4)); }
+.mc-portrait-name { font-family: var(--serif); font-size: .9rem; font-weight: 600; color: var(--atrium-soft); letter-spacing: .02em; }
+.mc-speech-wrap { position: absolute; top: 1.25rem; left: 1rem; right: 1rem; display: flex; flex-direction: column; align-items: center; }
+.mc-speech { position: relative; display: inline-block; max-width: 100%; border-radius: var(--radius-lg); padding: .85rem 1.15rem; font-family: var(--serif); font-size: 1.02rem; line-height: 1.5; color: #241f17; text-align: center; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; box-shadow: 0 12px 28px -8px rgba(0,0,0,.5);
+  background: var(--paper-noise), linear-gradient(180deg,#fbf7ee,#f1ebde); background-blend-mode: overlay, normal; background-size: 120px 120px, auto; }
+.mc-speech.is-empty { color: #8a7c64; font-style: italic; }
+.mc-speech-tail { width: 16px; height: 16px; margin-top: -8px; background: #f1ebde; border-bottom-right-radius: 3px; transform: rotate(45deg); box-shadow: 4px 4px 10px rgba(0,0,0,.14); }
+.mc-typing-ink { letter-spacing: .2em; color: #8a6a52; font-size: 1rem; }
+.mc-thread { flex: 1; overflow-y: auto; padding: 1.5rem 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
+.mc-thread-empty { color: var(--ink-mute); font-family: var(--serif); font-style: italic; font-size: .95rem; text-align: center; margin-top: 2.5rem; }
+.mc-msg-row { display: flex; animation: mc-fade-up .35s var(--ease) both; }
+.mc-msg { max-width: 84%; padding: .7rem .95rem; border-radius: 16px; font-family: var(--serif); font-size: 1rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.mc-msg.mine { background: var(--accent); color: #f7efe6; border-bottom-right-radius: 4px; margin-left: auto; }
+.mc-msg.theirs { background: var(--card); border: 1px solid var(--line); color: var(--ink); border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
+.mc-msg-speaker { font-family: var(--sans); font-size: .68rem; font-weight: 700; letter-spacing: .04em; color: var(--ink-mute); margin-bottom: .25rem; }
+
+@media (max-width: 880px) {
+  .mc-hero { grid-template-columns: 1fr; }
+  .mc-colophon { grid-template-columns: 1fr; }
+  /* stacked, the hero no longer fits one screen — let it run long */
+  .mc-theatre { min-height: 0; }
+  .mc-cue { display: none; }
+  .mc-stage-cap { text-align: left; }
+}
+@media (max-width: 720px) {
+  .mc-avatar-panel { display: none; }
+}
+@media (max-width: 560px) {
+  .mc-billing { font-size: 1.8rem; }
+  /* the tagline would push the wordmark onto two lines */
+  .mc-tagline { display: none; }
+}
+</style></head>
+  <body>
+    <div id="root"><div class="mc-screen"><section class="mc-theatre"><div class="mc-wrap"><header class="mc-top"><div class="mc-mark">The Green Room</div><p class="mc-tagline">Step backstage with the characters in your manuscript.</p></header><div class="mc-hero"><div class="mc-playbill mc-reveal mc-in"><span class="mc-eyebrow">Tonight — the cast of your manuscript</span><span class="mc-billing">The</span><h1 class="mc-headword">Green Room</h1><div class="mc-bill-rule"><span class="mc-lozenge"></span></div><div class="mc-pron"><span class="phon">[ˈɡriːn ruːm]</span><span class="pos">noun</span></div><div class="mc-entry-rule"></div><div class="mc-senses"><div class="mc-sense"><span class="mc-sense-n">1.</span><p>The room offstage where the cast wait before going on.</p></div><div class="mc-sense"><span class="mc-sense-n">2.</span><p>Where your characters wait. <em>Go in and talk to them.</em></p></div></div></div><div class="mc-reveal" style="--d: 120ms;"><span class="mc-stage-cap">Every book has a green room</span><div class="mc-stage-frame"><svg class="tc " viewBox="0 0 560 495" role="img" aria-label="An emerald velvet couch on a small stage, with book spines standing on the seat"><defs><linearGradient id="tc-curtain" x1="0" y1="0" x2="1" y2="0"><stop offset="0.00%" stop-color="#23050b"></stop><stop offset="4.84%" stop-color="#711a26"></stop><stop offset="7.34%" stop-color="#23050b"></stop><stop offset="13.29%" stop-color="#711a26"></stop><stop offset="16.50%" stop-color="#23050b"></stop><stop offset="20.29%" stop-color="#711a26"></stop><stop offset="25.97%" stop-color="#23050b"></stop><stop offset="28.28%" stop-color="#711a26"></stop><stop offset="33.67%" stop-color="#23050b"></stop><stop offset="37.89%" stop-color="#711a26"></stop><stop offset="40.76%" stop-color="#23050b"></stop><stop offset="46.78%" stop-color="#711a26"></stop><stop offset="49.51%" stop-color="#23050b"></stop><stop offset="53.94%" stop-color="#711a26"></stop><stop offset="59.16%" stop-color="#23050b"></stop><stop offset="61.51%" stop-color="#711a26"></stop><stop offset="67.30%" stop-color="#23050b"></stop><stop offset="70.89%" stop-color="#711a26"></stop><stop offset="74.28%" stop-color="#23050b"></stop><stop offset="80.17%" stop-color="#711a26"></stop><stop offset="82.58%" stop-color="#23050b"></stop><stop offset="87.61%" stop-color="#711a26"></stop><stop offset="92.26%" stop-color="#23050b"></stop><stop offset="94.85%" stop-color="#711a26"></stop><stop offset="100.00%" stop-color="#23050b"></stop></linearGradient><linearGradient id="tc-valance" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9e2734"></stop><stop offset="55%" stop-color="#71161f"></stop><stop offset="100%" stop-color="#3c0a11"></stop></linearGradient><linearGradient id="tc-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#256f4e"></stop><stop offset="45%" stop-color="#16523a"></stop><stop offset="100%" stop-color="#092b1d"></stop></linearGradient><linearGradient id="tc-seat" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#27754f"></stop><stop offset="40%" stop-color="#144d34"></stop><stop offset="100%" stop-color="#082619"></stop></linearGradient><linearGradient id="tc-arm" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0b3020"></stop><stop offset="48%" stop-color="#22704e"></stop><stop offset="100%" stop-color="#10422c"></stop></linearGradient><radialGradient id="tc-roll" cx="0.36" cy="0.3" r="0.8"><stop offset="0%" stop-color="#2f8a63"></stop><stop offset="55%" stop-color="#16583c"></stop><stop offset="100%" stop-color="#082718"></stop></radialGradient><linearGradient id="tc-rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#114733"></stop><stop offset="100%" stop-color="#061e13"></stop></linearGradient><radialGradient id="tc-puff" cx="0.5" cy="0.42" r="0.62"><stop offset="0%" stop-color="#45ad7e" stop-opacity="0.5"></stop><stop offset="70%" stop-color="#45ad7e" stop-opacity="0.07"></stop><stop offset="100%" stop-color="#45ad7e" stop-opacity="0"></stop></radialGradient><radialGradient id="tc-button" cx="0.35" cy="0.3" r="0.85"><stop offset="0%" stop-color="#216d4b"></stop><stop offset="100%" stop-color="#071f14"></stop></radialGradient><linearGradient id="tc-spine" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#fff" stop-opacity="0.22"></stop><stop offset="16%" stop-color="#fff" stop-opacity="0.04"></stop><stop offset="62%" stop-color="#000" stop-opacity="0.04"></stop><stop offset="100%" stop-color="#000" stop-opacity="0.3"></stop></linearGradient><linearGradient id="tc-faceout" x1="0.1" y1="0" x2="0.9" y2="1"><stop offset="0%" stop-color="#33406e"></stop><stop offset="100%" stop-color="#20294a"></stop></linearGradient><linearGradient id="tc-wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#28180d"></stop><stop offset="34%" stop-color="#79522f"></stop><stop offset="52%" stop-color="#9b6e43"></stop><stop offset="100%" stop-color="#231407"></stop></linearGradient><radialGradient id="tc-brass" cx="0.34" cy="0.3" r="0.8"><stop offset="0%" stop-color="#f2d48f"></stop><stop offset="45%" stop-color="#bd8f42"></stop><stop offset="100%" stop-color="#6b4a1a"></stop></radialGradient><linearGradient id="tc-brassline" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7d5926"></stop><stop offset="50%" stop-color="#e3c078"></stop><stop offset="100%" stop-color="#7d5926"></stop></linearGradient><linearGradient id="tc-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2d1c15"></stop><stop offset="45%" stop-color="#170c09"></stop><stop offset="100%" stop-color="#0b0504"></stop></linearGradient><radialGradient id="tc-spot" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="#f2cd90" stop-opacity="0.3"></stop><stop offset="45%" stop-color="#c98f4e" stop-opacity="0.11"></stop><stop offset="100%" stop-color="#c98f4e" stop-opacity="0"></stop></radialGradient><radialGradient id="tc-contact" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="#080304" stop-opacity="0.75"></stop><stop offset="60%" stop-color="#080304" stop-opacity="0.4"></stop><stop offset="100%" stop-color="#080304" stop-opacity="0"></stop></radialGradient><radialGradient id="tc-vignette" cx="0.5" cy="0.44" r="0.75"><stop offset="0%" stop-color="#000" stop-opacity="0"></stop><stop offset="58%" stop-color="#000" stop-opacity="0.22"></stop><stop offset="100%" stop-color="#000" stop-opacity="0.78"></stop></radialGradient><filter id="tc-napfilter" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"></feTurbulence><feColorMatrix type="saturate" values="0"></feColorMatrix></filter><pattern id="tc-nap" width="160" height="160" patternUnits="userSpaceOnUse"><rect width="160" height="160" filter="url(#tc-napfilter)"></rect></pattern><clipPath id="tc-backclip"><path d="M 88,334 L 88,158
+          C 88,137 106,132 130,132
+          L 430,132
+          C 454,132 472,137 472,158
+          L 472,334 Z"></path></clipPath></defs><rect width="560" height="495" fill="#150809"></rect><rect width="560" height="407" fill="url(#tc-curtain)"></rect><g><path d="M 8,0 C 12,120 4,240 11,407" stroke="#20050a" stroke-width="3" fill="none" opacity="0.55"></path><path d="M 45.0527790833069,0 C 49.0527790833069,120 41.0527790833069,240 48.0527790833069,407" stroke="#20050a" stroke-width="5" fill="none" opacity="0.55"></path><path d="M 68.02301234698496,0 C 72.02301234698496,120 64.02301234698496,240 71.02301234698496,407" stroke="#20050a" stroke-width="7" fill="none" opacity="0.55"></path><path d="M 111.76200718309491,0 C 115.76200718309491,120 107.76200718309491,240 114.76200718309491,407" stroke="#20050a" stroke-width="3" fill="none" opacity="0.55"></path><path d="M 138.95403931266213,0 C 142.95403931266213,120 134.95403931266213,240 141.95403931266213,407" stroke="#20050a" stroke-width="5" fill="none" opacity="0.55"></path><path d="M 169.7805624919974,0 C 173.7805624919974,120 165.7805624919974,240 172.7805624919974,407" stroke="#20050a" stroke-width="7" fill="none" opacity="0.55"></path><path d="M 211.79394665929567,0 C 215.79394665929567,120 207.79394665929567,240 214.79394665929567,407" stroke="#20050a" stroke-width="3" fill="none" opacity="0.55"></path><path d="M 233.67459779851097,0 C 237.67459779851097,120 229.67459779851097,240 236.67459779851097,407" stroke="#20050a" stroke-width="5" fill="none" opacity="0.55"></path><path d="M 274.05988957291936,0 C 278.05988957291936,120 270.05988957291936,240 277.05988957291936,407" stroke="#20050a" stroke-width="7" fill="none" opacity="0.55"></path><path d="M 307.28750294992966,0 C 311.28750294992966,120 303.28750294992966,240 310.28750294992966,407" stroke="#20050a" stroke-width="3" fill="none" opacity="0.55"></path><path d="M 332.56652982796027,0 C 336.56652982796027,120 328.56652982796027,240 335.56652982796027,407" stroke="#20050a" stroke-width="5" fill="none" opacity="0.55"></path><path d="M 376.7257105669562,0 C 380.7257105669562,120 372.7257105669562,240 379.7257105669562,407" stroke="#20050a" stroke-width="7" fill="none" opacity="0.55"></path><path d="M 400.9892641938766,0 C 404.9892641938766,120 396.9892641938766,240 403.9892641938766,407" stroke="#20050a" stroke-width="3" fill="none" opacity="0.55"></path><path d="M 435.71448475822467,0 C 439.71448475822467,120 431.71448475822467,240 438.71448475822467,407" stroke="#20050a" stroke-width="5" fill="none" opacity="0.55"></path><path d="M 474.9065975271586,0 C 478.9065975271586,120 470.9065975271586,240 477.9065975271586,407" stroke="#20050a" stroke-width="7" fill="none" opacity="0.55"></path><path d="M 497.0493268793413,0 C 501.0493268793413,120 493.0493268793413,240 500.0493268793413,407" stroke="#20050a" stroke-width="3" fill="none" opacity="0.55"></path><path d="M 539.8693803976691,0 C 543.8693803976691,120 535.8693803976691,240 542.8693803976691,407" stroke="#20050a" stroke-width="5" fill="none" opacity="0.55"></path></g><path d="M 0,0 L 560,0 L 560,28 Q 520,56 480,28 Q 440,56 400,28 Q 360,56 320,28 Q 280,56 240,28 Q 200,56 160,28 Q 120,56 80,28 Q 40,56 0,28 L 0,0 Z" fill="url(#tc-valance)"></path><path d="M 560,28 Q 520,56 480,28 Q 440,56 400,28 Q 360,56 320,28 Q 280,56 240,28 Q 200,56 160,28 Q 120,56 80,28 Q 40,56 0,28" fill="none" stroke="url(#tc-brassline)" stroke-width="1.8"></path><g opacity="0.9"><g><line x1="80" y1="27" x2="80" y2="37" stroke="#9c7333" stroke-width="1.1"></line><path d="M 76.5,37 L 83.5,37 L 82.2,48 L 77.8,48 Z" fill="url(#tc-brass)"></path><path d="M 77.8,48 L 82.2,48 L 81.2,54 L 78.8,54 Z" fill="#8a6329"></path></g><g><line x1="160" y1="27" x2="160" y2="37" stroke="#9c7333" stroke-width="1.1"></line><path d="M 156.5,37 L 163.5,37 L 162.2,48 L 157.8,48 Z" fill="url(#tc-brass)"></path><path d="M 157.8,48 L 162.2,48 L 161.2,54 L 158.8,54 Z" fill="#8a6329"></path></g><g><line x1="240" y1="27" x2="240" y2="37" stroke="#9c7333" stroke-width="1.1"></line><path d="M 236.5,37 L 243.5,37 L 242.2,48 L 237.8,48 Z" fill="url(#tc-brass)"></path><path d="M 237.8,48 L 242.2,48 L 241.2,54 L 238.8,54 Z" fill="#8a6329"></path></g><g><line x1="320" y1="27" x2="320" y2="37" stroke="#9c7333" stroke-width="1.1"></line><path d="M 316.5,37 L 323.5,37 L 322.2,48 L 317.8,48 Z" fill="url(#tc-brass)"></path><path d="M 317.8,48 L 322.2,48 L 321.2,54 L 318.8,54 Z" fill="#8a6329"></path></g><g><line x1="400" y1="27" x2="400" y2="37" stroke="#9c7333" stroke-width="1.1"></line><path d="M 396.5,37 L 403.5,37 L 402.2,48 L 397.8,48 Z" fill="url(#tc-brass)"></path><path d="M 397.8,48 L 402.2,48 L 401.2,54 L 398.8,54 Z" fill="#8a6329"></path></g><g><line x1="480" y1="27" x2="480" y2="37" stroke="#9c7333" stroke-width="1.1"></line><path d="M 476.5,37 L 483.5,37 L 482.2,48 L 477.8,48 Z" fill="url(#tc-brass)"></path><path d="M 477.8,48 L 482.2,48 L 481.2,54 L 478.8,54 Z" fill="#8a6329"></path></g></g><rect width="560" height="495" fill="url(#tc-vignette)"></rect><rect y="403" width="560" height="92" fill="url(#tc-floor)"></rect><ellipse cx="280" cy="441" rx="290" ry="38" fill="url(#tc-spot)" class="tc-spot"></ellipse><ellipse cx="280" cy="429" rx="200" ry="13" fill="url(#tc-contact)"></ellipse><path d="M 88,334 L 88,158
+          C 88,137 106,132 130,132
+          L 430,132
+          C 454,132 472,137 472,158
+          L 472,334 Z" fill="url(#tc-back)"></path><g clip-path="url(#tc-backclip)"><rect x="88" y="132" width="384" height="202" fill="url(#tc-nap)" opacity="0.26" style="mix-blend-mode: soft-light;"></rect><g><g opacity="0.3"><ellipse cx="125" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="163" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="201" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="239" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="277" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="315" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="353" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="391" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="429" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="467" cy="168" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="144" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="182" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="220" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="258" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="296" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="334" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="372" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="410" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="448" cy="200" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="125" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="163" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="201" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="239" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="277" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="315" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="353" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="391" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="429" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="467" cy="232" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="144" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="182" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="220" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="258" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="296" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="334" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="372" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="410" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="448" cy="264" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="125" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="163" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="201" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="239" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="277" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="315" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="353" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="391" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="429" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="467" cy="296" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="144" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="182" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="220" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="258" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="296" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="334" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="372" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="410" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse><ellipse cx="448" cy="328" rx="19.76" ry="17.92" fill="url(#tc-puff)"></ellipse></g><path d="M 106,152 L 87,184 M 106,152 L 125,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 144,152 L 125,184 M 144,152 L 163,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 182,152 L 163,184 M 182,152 L 201,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 220,152 L 201,184 M 220,152 L 239,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 258,152 L 239,184 M 258,152 L 277,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 296,152 L 277,184 M 296,152 L 315,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 334,152 L 315,184 M 334,152 L 353,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 372,152 L 353,184 M 372,152 L 391,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 410,152 L 391,184 M 410,152 L 429,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 448,152 L 429,184 M 448,152 L 467,184" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 125,184 L 106,216 M 125,184 L 144,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 163,184 L 144,216 M 163,184 L 182,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 201,184 L 182,216 M 201,184 L 220,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 239,184 L 220,216 M 239,184 L 258,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 277,184 L 258,216 M 277,184 L 296,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 315,184 L 296,216 M 315,184 L 334,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 353,184 L 334,216 M 353,184 L 372,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 391,184 L 372,216 M 391,184 L 410,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 429,184 L 410,216 M 429,184 L 448,216" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 106,216 L 87,248 M 106,216 L 125,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 144,216 L 125,248 M 144,216 L 163,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 182,216 L 163,248 M 182,216 L 201,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 220,216 L 201,248 M 220,216 L 239,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 258,216 L 239,248 M 258,216 L 277,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 296,216 L 277,248 M 296,216 L 315,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 334,216 L 315,248 M 334,216 L 353,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 372,216 L 353,248 M 372,216 L 391,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 410,216 L 391,248 M 410,216 L 429,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 448,216 L 429,248 M 448,216 L 467,248" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 125,248 L 106,280 M 125,248 L 144,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 163,248 L 144,280 M 163,248 L 182,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 201,248 L 182,280 M 201,248 L 220,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 239,248 L 220,280 M 239,248 L 258,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 277,248 L 258,280 M 277,248 L 296,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 315,248 L 296,280 M 315,248 L 334,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 353,248 L 334,280 M 353,248 L 372,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 391,248 L 372,280 M 391,248 L 410,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 429,248 L 410,280 M 429,248 L 448,280" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 106,280 L 87,312 M 106,280 L 125,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 144,280 L 125,312 M 144,280 L 163,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 182,280 L 163,312 M 182,280 L 201,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 220,280 L 201,312 M 220,280 L 239,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 258,280 L 239,312 M 258,280 L 277,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 296,280 L 277,312 M 296,280 L 315,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 334,280 L 315,312 M 334,280 L 353,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 372,280 L 353,312 M 372,280 L 391,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 410,280 L 391,312 M 410,280 L 429,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 448,280 L 429,312 M 448,280 L 467,312" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 125,312 L 106,344 M 125,312 L 144,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 163,312 L 144,344 M 163,312 L 182,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 201,312 L 182,344 M 201,312 L 220,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 239,312 L 220,344 M 239,312 L 258,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 277,312 L 258,344 M 277,312 L 296,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 315,312 L 296,344 M 315,312 L 334,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 353,312 L 334,344 M 353,312 L 372,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 391,312 L 372,344 M 391,312 L 410,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><path d="M 429,312 L 410,344 M 429,312 L 448,344" stroke="#06241a" stroke-width="0.9" opacity="0.45" fill="none"></path><g><ellipse cx="106" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="106" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="105.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="144" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="144" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="143.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="182" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="182" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="181.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="220" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="220" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="219.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="258" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="258" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="257.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="296" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="296" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="295.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="334" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="334" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="333.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="372" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="372" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="371.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="410" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="410" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="409.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="448" cy="153.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="448" cy="152" r="2.7" fill="url(#tc-button)"></circle><circle cx="447.2" cy="151.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="125" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="125" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="124.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="163" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="163" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="162.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="201" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="201" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="200.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="239" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="239" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="238.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="277" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="277" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="276.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="315" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="315" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="314.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="353" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="353" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="352.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="391" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="391" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="390.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="429" cy="185.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="429" cy="184" r="2.7" fill="url(#tc-button)"></circle><circle cx="428.2" cy="183.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="106" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="106" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="105.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="144" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="144" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="143.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="182" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="182" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="181.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="220" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="220" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="219.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="258" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="258" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="257.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="296" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="296" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="295.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="334" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="334" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="333.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="372" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="372" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="371.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="410" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="410" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="409.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="448" cy="217.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="448" cy="216" r="2.7" fill="url(#tc-button)"></circle><circle cx="447.2" cy="215.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="125" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="125" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="124.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="163" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="163" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="162.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="201" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="201" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="200.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="239" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="239" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="238.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="277" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="277" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="276.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="315" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="315" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="314.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="353" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="353" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="352.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="391" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="391" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="390.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="429" cy="249.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="429" cy="248" r="2.7" fill="url(#tc-button)"></circle><circle cx="428.2" cy="247.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="106" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="106" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="105.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="144" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="144" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="143.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="182" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="182" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="181.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="220" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="220" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="219.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="258" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="258" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="257.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="296" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="296" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="295.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="334" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="334" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="333.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="372" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="372" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="371.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="410" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="410" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="409.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="448" cy="281.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="448" cy="280" r="2.7" fill="url(#tc-button)"></circle><circle cx="447.2" cy="279.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="125" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="125" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="124.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="163" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="163" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="162.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="201" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="201" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="200.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="239" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="239" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="238.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="277" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="277" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="276.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="315" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="315" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="314.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="353" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="353" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="352.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="391" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="391" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="390.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g><g><ellipse cx="429" cy="313.3" rx="3.6" ry="2.9" fill="#04170f" opacity="0.8"></ellipse><circle cx="429" cy="312" r="2.7" fill="url(#tc-button)"></circle><circle cx="428.2" cy="311.1" r="0.9" fill="#68c79e" opacity="0.45"></circle></g></g></g><path d="M 90,158
+          C 90,138 107,134 130,134
+          L 430,134
+          C 453,134 470,138 470,158" fill="none" stroke="#3fa47a" stroke-width="1.6" opacity="0.5"></path><path d="M 71,328 L 489,328
+          C 497,334 497,361 489,369
+          L 71,369
+          C 63,361 63,334 71,328 Z" fill="url(#tc-seat)"></path><path d="M 71,328 L 489,328
+          C 497,334 497,361 489,369
+          L 71,369
+          C 63,361 63,334 71,328 Z" fill="url(#tc-nap)" opacity="0.2" style="mix-blend-mode: soft-light;"></path><path d="M 75,331 L 485,331" stroke="#3fa47a" stroke-width="2" opacity="0.4" fill="none" stroke-linecap="round"></path><g><g class="tc-book" transform="translate(105.5, 343) rotate(-3)"><title>The Protagonist</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="20.46" ry="3.5" fill="#03180e" opacity="0.5"></ellipse><rect x="-16.5" y="-168" width="33" height="168" rx="1.5" fill="#e2c25c"></rect><rect x="-16.5" y="-168" width="33" height="168" rx="1.5" fill="url(#tc-spine)"></rect><text class="tc-book-title" x="0" y="-88" transform="rotate(-90 0 -88)" text-anchor="middle" dominant-baseline="central" fill="#3a2f10" font-size="15">The Protagonist</text><text class="tc-book-no" x="0" y="-13" transform="rotate(-90 0 -13)" text-anchor="middle" dominant-baseline="central" fill="#3a2f10" opacity="0.6">001</text></g></g><g class="tc-book" transform="translate(139.5, 343) rotate(-1.5)"><title>The Rival</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="15.5" ry="3.5" fill="#03180e" opacity="0.5"></ellipse><rect x="-12.5" y="-128" width="25" height="128" rx="1.5" fill="#b5503f"></rect><rect x="-12.5" y="-128" width="25" height="128" rx="1.5" fill="url(#tc-spine)"></rect><text class="tc-book-title" x="0" y="-68" transform="rotate(-90 0 -68)" text-anchor="middle" dominant-baseline="central" fill="#f7ece2" font-size="15">The Rival</text><text class="tc-book-no" x="0" y="-13" transform="rotate(-90 0 -13)" text-anchor="middle" dominant-baseline="central" fill="#f7ece2" opacity="0.6">002</text></g></g><g class="tc-book" transform="translate(177.5, 343) rotate(0)"><title>The Confidante</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="25.419999999999998" ry="3.5" fill="#03180e" opacity="0.5"></ellipse><rect x="-20.5" y="-159" width="41" height="159" rx="1.5" fill="#d3a2ac"></rect><rect x="-20.5" y="-159" width="41" height="159" rx="1.5" fill="url(#tc-spine)"></rect><text class="tc-book-title" x="0" y="-83.5" transform="rotate(-90 0 -83.5)" text-anchor="middle" dominant-baseline="central" fill="#402029" font-size="15">The Confidante</text><text class="tc-book-no" x="0" y="-13" transform="rotate(-90 0 -13)" text-anchor="middle" dominant-baseline="central" fill="#402029" opacity="0.6">003</text></g></g><g class="tc-book" transform="translate(217.5, 343) rotate(2)"><title>The Beloved</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="17.98" ry="3.5" fill="#03180e" opacity="0.5"></ellipse><rect x="-14.5" y="-188" width="29" height="188" rx="1.5" fill="#e6dfcd"></rect><rect x="-14.5" y="-188" width="29" height="188" rx="1.5" fill="url(#tc-spine)"></rect><text class="tc-book-title" x="0" y="-98" transform="rotate(-90 0 -98)" text-anchor="middle" dominant-baseline="central" fill="#3b3527" font-size="15">The Beloved</text><text class="tc-book-no" x="0" y="-13" transform="rotate(-90 0 -13)" text-anchor="middle" dominant-baseline="central" fill="#3b3527" opacity="0.6">004</text></g></g><g class="tc-book" transform="translate(280, 343)"><title>Your manuscript</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="47.300000000000004" ry="4" fill="#03180e" opacity="0.55"></ellipse><rect x="-43" y="-157" width="86" height="157" rx="2" fill="url(#tc-faceout)"></rect><rect x="-43" y="-157" width="86" height="157" rx="2" fill="url(#tc-nap)" opacity="0.2" style="mix-blend-mode: soft-light;"></rect><rect x="-43" y="-157" width="4" height="157" fill="#000" opacity="0.28"></rect><text class="tc-fo-label" x="2" y="-137" text-anchor="middle">MANUSCRIPT</text><text class="tc-fo-title" x="2" y="-97" text-anchor="middle">Your</text><text class="tc-fo-title" x="2" y="-77" text-anchor="middle">book</text><line x1="-11" y1="-65" x2="15" y2="-65" stroke="#b6893f" stroke-width="1"></line><text class="tc-fo-sub" x="2" y="-49" text-anchor="middle">Waiting to be read</text><text class="tc-fo-label" x="2" y="-14" text-anchor="middle">THE GREEN ROOM</text></g></g><g class="tc-book" transform="translate(346.5, 343) rotate(-2.5)"><title>The Mentor</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="22.94" ry="3.5" fill="#03180e" opacity="0.5"></ellipse><rect x="-18.5" y="-140" width="37" height="140" rx="1.5" fill="#5d3a6e"></rect><rect x="-18.5" y="-140" width="37" height="140" rx="1.5" fill="url(#tc-spine)"></rect><text class="tc-book-title" x="0" y="-74" transform="rotate(-90 0 -74)" text-anchor="middle" dominant-baseline="central" fill="#efe6f2" font-size="15">The Mentor</text><text class="tc-book-no" x="0" y="-13" transform="rotate(-90 0 -13)" text-anchor="middle" dominant-baseline="central" fill="#efe6f2" opacity="0.6">005</text></g></g><g class="tc-book" transform="translate(382, 343) rotate(0)"><title>The Rival's Sister</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="14.879999999999999" ry="3.5" fill="#03180e" opacity="0.5"></ellipse><rect x="-12" y="-180" width="24" height="180" rx="1.5" fill="#aec2d3"></rect><rect x="-12" y="-180" width="24" height="180" rx="1.5" fill="url(#tc-spine)"></rect><text class="tc-book-title" x="0" y="-94" transform="rotate(-90 0 -94)" text-anchor="middle" dominant-baseline="central" fill="#25333f" font-size="14.14141414141414">The Rival's Sister</text><text class="tc-book-no" x="0" y="-13" transform="rotate(-90 0 -13)" text-anchor="middle" dominant-baseline="central" fill="#25333f" opacity="0.6">006</text></g></g><g class="tc-book" transform="translate(421.5, 343) rotate(1.5)"><title>The Narrator</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="27.9" ry="3.5" fill="#03180e" opacity="0.5"></ellipse><rect x="-22.5" y="-173" width="45" height="173" rx="1.5" fill="#4a4642"></rect><rect x="-22.5" y="-173" width="45" height="173" rx="1.5" fill="url(#tc-spine)"></rect><text class="tc-book-title" x="0" y="-90.5" transform="rotate(-90 0 -90.5)" text-anchor="middle" dominant-baseline="central" fill="#eae5da" font-size="15">The Narrator</text><text class="tc-book-no" x="0" y="-13" transform="rotate(-90 0 -13)" text-anchor="middle" dominant-baseline="central" fill="#eae5da" opacity="0.6">007</text></g></g><g class="tc-book" transform="translate(460, 343) rotate(4)"><title>The Ghost</title><g class="tc-book-lift"><ellipse cx="0" cy="2" rx="13.64" ry="3.5" fill="#03180e" opacity="0.5"></ellipse><rect x="-11" y="-120" width="22" height="120" rx="1.5" fill="#c9762f"></rect><rect x="-11" y="-120" width="22" height="120" rx="1.5" fill="url(#tc-spine)"></rect><text class="tc-book-title" x="0" y="-64" transform="rotate(-90 0 -64)" text-anchor="middle" dominant-baseline="central" fill="#fdf3e6" font-size="15">The Ghost</text><text class="tc-book-no" x="0" y="-13" transform="rotate(-90 0 -13)" text-anchor="middle" dominant-baseline="central" fill="#fdf3e6" opacity="0.6">008</text></g></g></g><g><path d="M 88,300
+    C 88,283 79,276 63,276
+    C 45,276 38,287 38,304
+    L 38,387 L 88,387 Z" fill="url(#tc-arm)"></path><path d="M 88,300
+    C 88,283 79,276 63,276
+    C 45,276 38,287 38,304
+    L 38,387 L 88,387 Z" fill="url(#tc-nap)" opacity="0.22" style="mix-blend-mode: soft-light;"></path><ellipse cx="63" cy="300" rx="25" ry="23" fill="url(#tc-roll)"></ellipse><path d="M 63,286 C 73,286 78,292 78,300
+            C 78,308 72,313 65,313
+            C 59,313 55,308 55,303" fill="none" stroke="#082a1c" stroke-width="1.3" opacity="0.55"></path><path d="M 63,283 C 74,283 81,291 81,300" fill="none" stroke="#47ab80" stroke-width="1.3" opacity="0.35"></path><g><circle cx="44" cy="327" r="2.2" fill="url(#tc-brass)"></circle><circle cx="44.44621272426349" cy="340.75" r="2.2" fill="url(#tc-brass)"></circle><circle cx="44.86993106822246" cy="354.5" r="2.2" fill="url(#tc-brass)"></circle><circle cx="45.2497946334554" cy="368.25" r="2.2" fill="url(#tc-brass)"></circle><circle cx="45.56665381925497" cy="382" r="2.2" fill="url(#tc-brass)"></circle><circle cx="56.03668315938407" cy="325.1831621893444" r="2.2" fill="url(#tc-brass)"></circle><circle cx="47.261665420140346" cy="321.50409493113864" r="2.2" fill="url(#tc-brass)"></circle><circle cx="40.347524157501475" cy="315.2824165596043" r="2.2" fill="url(#tc-brass)"></circle><circle cx="36.11177680104559" cy="307.25376875701994" r="2.2" fill="url(#tc-brass)"></circle><circle cx="35.0552516040084" cy="298.36744649223783" r="2.2" fill="url(#tc-brass)"></circle></g></g><g transform="translate(560,0) scale(-1,1)"><g><path d="M 88,300
+    C 88,283 79,276 63,276
+    C 45,276 38,287 38,304
+    L 38,387 L 88,387 Z" fill="url(#tc-arm)"></path><path d="M 88,300
+    C 88,283 79,276 63,276
+    C 45,276 38,287 38,304
+    L 38,387 L 88,387 Z" fill="url(#tc-nap)" opacity="0.22" style="mix-blend-mode: soft-light;"></path><ellipse cx="63" cy="300" rx="25" ry="23" fill="url(#tc-roll)"></ellipse><path d="M 63,286 C 73,286 78,292 78,300
+            C 78,308 72,313 65,313
+            C 59,313 55,308 55,303" fill="none" stroke="#082a1c" stroke-width="1.3" opacity="0.55"></path><path d="M 63,283 C 74,283 81,291 81,300" fill="none" stroke="#47ab80" stroke-width="1.3" opacity="0.35"></path><g><circle cx="44" cy="327" r="2.2" fill="url(#tc-brass)"></circle><circle cx="44.44621272426349" cy="340.75" r="2.2" fill="url(#tc-brass)"></circle><circle cx="44.86993106822246" cy="354.5" r="2.2" fill="url(#tc-brass)"></circle><circle cx="45.2497946334554" cy="368.25" r="2.2" fill="url(#tc-brass)"></circle><circle cx="45.56665381925497" cy="382" r="2.2" fill="url(#tc-brass)"></circle><circle cx="56.03668315938407" cy="325.1831621893444" r="2.2" fill="url(#tc-brass)"></circle><circle cx="47.261665420140346" cy="321.50409493113864" r="2.2" fill="url(#tc-brass)"></circle><circle cx="40.347524157501475" cy="315.2824165596043" r="2.2" fill="url(#tc-brass)"></circle><circle cx="36.11177680104559" cy="307.25376875701994" r="2.2" fill="url(#tc-brass)"></circle><circle cx="35.0552516040084" cy="298.36744649223783" r="2.2" fill="url(#tc-brass)"></circle></g></g></g><path d="M 64,369 L 496,369
+          C 502,374 502,383 494,387
+          L 66,387
+          C 58,383 58,374 64,369 Z" fill="url(#tc-rail)"></path><path d="M 64,369 L 496,369
+          C 502,374 502,383 494,387
+          L 66,387
+          C 58,383 58,374 64,369 Z" fill="url(#tc-nap)" opacity="0.16" style="mix-blend-mode: soft-light;"></path><g transform="translate(80, 385)"><path d="M -8,0 L 8,0 L 7,6
+  C 12,11 12,17 7,21 L 6,28
+  C 9,31 9,35 5,38 L 4,43 L -4,43 L -5,38
+  C -9,35 -9,31 -6,28 L -7,21
+  C -12,17 -12,11 -7,6 Z" fill="url(#tc-wood)"></path><path d="M -8,0 L 8,0 L 7,6
+  C 12,11 12,17 7,21 L 6,28
+  C 9,31 9,35 5,38 L 4,43 L -4,43 L -5,38
+  C -9,35 -9,31 -6,28 L -7,21
+  C -12,17 -12,11 -7,6 Z" fill="none" stroke="#160c05" stroke-width="0.6" opacity="0.55"></path></g><g transform="translate(207, 385)"><path d="M -8,0 L 8,0 L 7,6
+  C 12,11 12,17 7,21 L 6,28
+  C 9,31 9,35 5,38 L 4,43 L -4,43 L -5,38
+  C -9,35 -9,31 -6,28 L -7,21
+  C -12,17 -12,11 -7,6 Z" fill="url(#tc-wood)"></path><path d="M -8,0 L 8,0 L 7,6
+  C 12,11 12,17 7,21 L 6,28
+  C 9,31 9,35 5,38 L 4,43 L -4,43 L -5,38
+  C -9,35 -9,31 -6,28 L -7,21
+  C -12,17 -12,11 -7,6 Z" fill="none" stroke="#160c05" stroke-width="0.6" opacity="0.55"></path></g><g transform="translate(353, 385)"><path d="M -8,0 L 8,0 L 7,6
+  C 12,11 12,17 7,21 L 6,28
+  C 9,31 9,35 5,38 L 4,43 L -4,43 L -5,38
+  C -9,35 -9,31 -6,28 L -7,21
+  C -12,17 -12,11 -7,6 Z" fill="url(#tc-wood)"></path><path d="M -8,0 L 8,0 L 7,6
+  C 12,11 12,17 7,21 L 6,28
+  C 9,31 9,35 5,38 L 4,43 L -4,43 L -5,38
+  C -9,35 -9,31 -6,28 L -7,21
+  C -12,17 -12,11 -7,6 Z" fill="none" stroke="#160c05" stroke-width="0.6" opacity="0.55"></path></g><g transform="translate(480, 385)"><path d="M -8,0 L 8,0 L 7,6
+  C 12,11 12,17 7,21 L 6,28
+  C 9,31 9,35 5,38 L 4,43 L -4,43 L -5,38
+  C -9,35 -9,31 -6,28 L -7,21
+  C -12,17 -12,11 -7,6 Z" fill="url(#tc-wood)"></path><path d="M -8,0 L 8,0 L 7,6
+  C 12,11 12,17 7,21 L 6,28
+  C 9,31 9,35 5,38 L 4,43 L -4,43 L -5,38
+  C -9,35 -9,31 -6,28 L -7,21
+  C -12,17 -12,11 -7,6 Z" fill="none" stroke="#160c05" stroke-width="0.6" opacity="0.55"></path></g></svg></div></div></div></div><a href="#intake" class="mc-cue" aria-hidden="false" tabindex="0"><span>Submit a manuscript</span><span class="mc-cue-arrow"></span></a></section><div class="mc-wrap"><section class="mc-section" id="intake"><div class="mc-sec-head mc-reveal"><h2>Submit a manuscript, <em>enter its green room.</em></h2></div><div class="mc-hero" style="padding: 0px; align-items: start;"><div class="mc-slipcase mc-reveal"><h3 class="mc-slip-title">Upload your manuscript</h3><div class="mc-tabs" role="tablist" style="margin-bottom: 1.3rem;"><button class="mc-tab is-on" type="button">File upload</button><button class="mc-tab" type="button">Paste text</button></div><form><label class="mc-field"><span class="mc-label">Manuscript title <span class="mc-opt">(optional)</span></span><input class="mc-input" type="text" placeholder="e.g. Pride and Prejudice" value=""></label><div class="mc-field"><span class="mc-label">Manuscript file</span><div class="mc-drop" tabindex="0" role="button" aria-label="Upload manuscript"><input type="file" accept=".txt,.pdf,.docx,.doc" style="display: none;"><div class="mc-drop-up">↑</div><p>Drag &amp; drop your manuscript here, or <span class="mc-browse">browse</span></p><div class="mc-fmt">SUPPORTED · .TXT · .PDF · .DOCX</div></div></div><button type="submit" class="mc-btn mc-btn--primary mc-btn--block mc-btn--lg" disabled="">Open the green room →</button></form></div><div class="mc-chapters"><div class="mc-step-lg mc-reveal"><span class="mc-rn">i.</span><div><h4>Sign in at the stage door</h4><p>Upload or paste your manuscript. Files are read in your browser — only the plain text is sent on.</p></div></div><div class="mc-step-lg mc-reveal" style="--d: 90ms;"><span class="mc-rn">ii.</span><div><h4>The cast is called</h4><p>AI reads the whole work and calls every character to the room, matching their aliases and marking where each one appears.</p></div></div><div class="mc-step-lg mc-reveal" style="--d: 180ms;"><span class="mc-rn">iii.</span><div><h4>Knock and go in</h4><p>Talk to one character alone, or put several on stage together and watch the scene play out.</p></div></div></div></div></section></div></div></div>
+    <script type="module" src="/src/main.jsx"></script>
+  
+
+</body></html>

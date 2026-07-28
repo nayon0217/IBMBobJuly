@@ -9,6 +9,7 @@ the frontend can rely on them. Keep them green as you build.
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services import store
 
 client = TestClient(app)
 
@@ -76,3 +77,25 @@ def test_scene_returns_dialogue_and_suggestion():
     assert len(body["dialogue"]) >= 2
     assert "summary" in body["suggestion"]
     assert "character_feelings" in body["suggestion"]
+
+
+def test_session_teardown_drops_the_manuscript():
+    client.post("/extract", json={"manuscript_text": "Once upon a time..."})
+    client.post("/personas", json={"character_ids": ["elizabeth-bennet"]})
+    assert store.get_chunks()
+
+    r = client.delete("/session")
+    assert r.status_code == 200
+    assert r.json()["status"] == "cleared"
+    assert store.get_chunks() == []
+    assert store.get_roster() == []
+    assert store.get_timeline() == []
+    assert store.get_characters() == []
+    assert store.get_vector_store().has_manuscript() is False
+
+
+def test_session_teardown_is_idempotent():
+    # The frontend fires this on unload without knowing whether anything was
+    # uploaded, so a teardown with nothing to tear down must still succeed.
+    assert client.delete("/session").status_code == 200
+    assert client.delete("/session").status_code == 200

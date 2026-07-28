@@ -18,10 +18,12 @@ from app.schemas import (
     PersonaResponse,
     SceneRequest,
     SceneResponse,
+    SessionResponse,
 )
 from app.services import chat as chat_service
 from app.services import extraction as extraction_service
 from app.services import scene as scene_service
+from app.services import store
 
 app = FastAPI(title="The Green Room API", version="0.1.0")
 
@@ -73,3 +75,12 @@ def scene(req: SceneRequest) -> SceneResponse:
         return scene_service.run_scene(req)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.delete("/session", response_model=SessionResponse)
+def end_session() -> SessionResponse:
+    """Teardown: drop the uploaded manuscript, its vectors, and every cached
+    persona. Idempotent, so the frontend can fire it on unload without caring
+    whether a manuscript was ever uploaded."""
+    store.clear_manuscript()
+    return SessionResponse()

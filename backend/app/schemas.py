@@ -185,6 +185,16 @@ class SceneResponse(BaseModel):
     suggestion: PlotSuggestion
 
 
+# --- /session ----------------------------------------------------------------
+
+
+class SessionResponse(BaseModel):
+    """Acknowledgement that the session's manuscript and everything derived
+    from it has been dropped."""
+
+    status: str = "cleared"
+
+
 # --- health ------------------------------------------------------------------
 
 

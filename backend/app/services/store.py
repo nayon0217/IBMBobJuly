@@ -243,6 +243,27 @@ def clear_characters() -> None:
     _grounded = {}
 
 
+# --- session teardown ---------------------------------------------------------
+
+
+def clear_manuscript() -> None:
+    """Drop the uploaded manuscript and everything derived from it: chunk
+    vectors, chunk text, the roster, timeline summaries, and every grounded
+    persona card. Called when the writer leaves for a new manuscript or closes
+    the tab, so a manuscript never outlives the session that uploaded it —
+    including in a hosted vector index, which a new upload would otherwise only
+    replace on the next `/extract`."""
+    global _roster, _chunks, _timeline
+    try:
+        get_vector_store().clear()
+    except Exception as exc:  # teardown is best-effort, never fatal
+        logger.warning("Vector store clear failed during teardown: %s", exc)
+    _roster = []
+    _chunks = []
+    _timeline = []
+    clear_characters()
+
+
 # --- helpers ------------------------------------------------------------------
 
 

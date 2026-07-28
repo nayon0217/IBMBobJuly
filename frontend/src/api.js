@@ -19,6 +19,14 @@ async function post(path, body) {
 
 export const health = () => fetch(`${BASE}/health`).then((r) => r.json());
 
+// Session teardown -> { status: "cleared" }
+// Drops the manuscript, its vectors, and every cached persona. Fired when the
+// writer leaves for a new manuscript and on tab close, so nothing outlives the
+// session. `keepalive` lets the request survive the page unload; failures are
+// swallowed because teardown must never block leaving.
+export const endSession = () =>
+  fetch(`${BASE}/session`, { method: "DELETE", keepalive: true }).catch(() => {});
+
 // ExtractRequest -> ExtractResponse
 // Returns un-grounded character stubs (id + name + timeline anchors) plus the
 // timeline summaries. Persona cards are grounded lazily via /personas.
