@@ -42,7 +42,7 @@ Demo video: (add video later)
 
 <img width="100%" alt="Tech stack" src="greenroomstack.svg" />
 
-## Technical Highlights
+## AI Approach and Architecture
 
 ### Retrieval-augmented generation — IBM Granite embeddings + Pinecone
 
