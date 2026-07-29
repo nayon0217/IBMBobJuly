@@ -2,6 +2,8 @@
 
 _A green room is where actors go backstage in a theatre where actors rest and interact before acting. Allow your characters to do so, and learn from them._
 
+Challenge theme: Reimagine Creative Industries with AI
+
 ## Motivation
 
 The Green Room is a platform to help writers combat writer's block. Upload a
@@ -58,4 +60,8 @@ Personas are built by a four-stage pipeline:
 ### 2D character generation — DiceBear
 
 Each persona card includes a `physical` field extracted from the manuscript. An LLM call maps that freeform description onto a fixed menu of avatar parameters — hairstyle, hair color, skin tone, facial hair, accessories, clothing — which are passed to **DiceBear** (Avataaars style) to render a deterministic SVG avatar for the character. After every line a character speaks, an expression tag is parsed off that completion and mapped onto the avatar, so the character's visible emotional state updates as a conversation or scene unfolds. 
+
+### How IBM Bob was used
+
+This project was built with **IBM Bob** as our AI coding assistant throughout — used for writing new code, debugging errors, scaffolding boilerplate, and reviewing changes across both the backend and frontend. It sat alongside the actual watsonx.ai/Granite stack that powers the product itself, functioning as our day-to-day development environment.
 
