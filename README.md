@@ -61,7 +61,7 @@ Personas are built by a four-stage pipeline:
 
 Each persona card includes a `physical` field extracted from the manuscript. An LLM call maps that freeform description onto a fixed menu of avatar parameters — hairstyle, hair color, skin tone, facial hair, accessories, clothing — which are passed to **DiceBear** (Avataaars style) to render a deterministic SVG avatar for the character. After every line a character speaks, an expression tag is parsed off that completion and mapped onto the avatar, so the character's visible emotional state updates as a conversation or scene unfolds. 
 
-### How IBM Bob was used
+## How IBM Bob was used
 
 This project was built with **IBM Bob** as our AI coding assistant throughout — used for writing new code, debugging errors, scaffolding boilerplate, and reviewing changes across both the backend and frontend. It sat alongside the actual watsonx.ai/Granite stack that powers the product itself, functioning as our day-to-day development environment.
 
