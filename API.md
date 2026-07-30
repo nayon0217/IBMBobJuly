@@ -1,9 +1,5 @@
 # API Contract
 
-This is the seam between the two tracks. Agree on it **on day one**. Change it
-only together — when it changes, update `backend/app/schemas.py` and
-`frontend/src/api.js` in the same commit.
-
 Base URL (local): `http://localhost:8000`
 
 ---
