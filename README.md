@@ -63,5 +63,5 @@ Each persona card includes a `physical` field extracted from the manuscript. An 
 
 ## How IBM Bob was used
 
-This project was built with **IBM Bob** as our AI coding assistant throughout — used for writing new code, debugging errors, scaffolding boilerplate, and reviewing changes across both the backend and frontend. It sat alongside the actual watsonx.ai/Granite stack that powers the product itself, functioning as our day-to-day development environment.
+This project was built with **IBM Bob** as our AI coding assistant throughout — used for writing new code, debugging errors, scaffolding boilerplate, and reviewing changes across both the backend and frontend. It sat alongside the actual watsonx.ai/Granite stack that powers the product itself, functioning as our day-to-day development environment. We used plan mode to design the API architecture implementation and connected Figma MCP to read design context and implement it directly in code. 
 
