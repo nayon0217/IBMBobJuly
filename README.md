@@ -4,6 +4,8 @@ _A green room is where actors go backstage in a theatre where actors rest and in
 
 Challenge theme: Reimagine Creative Industries with AI
 
+Try it here: https://thegreenroom.up.railway.app/
+
 ## Motivation
 
 The Green Room is a platform to help writers combat writer's block. Upload a
