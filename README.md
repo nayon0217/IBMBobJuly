@@ -24,8 +24,7 @@ Industries with AI*).
 
 ## Demo
 
-Demo video: (add video later)
-
+Demo video: https://youtu.be/IlBrbn56Vq0 
 <table>
   <tr>
     <td><img width="100%" alt="Screenshot 1" src="https://github.com/user-attachments/assets/7f255922-4a3d-4d78-b2d1-98a7d6355889" /></td>
